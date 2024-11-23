@@ -1,5 +1,15 @@
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
+import { BrowserRouter } from "react-router";
+import App from "./app.tsx";
+import { ThemeProvider } from "./components/theme-provider.tsx";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(<App />);
+export function renderToDom(container: HTMLElement) {
+  createRoot(container).render(
+    <BrowserRouter>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <App />
+      </ThemeProvider>
+    </BrowserRouter>
+  );
+}
