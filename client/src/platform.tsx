@@ -18,7 +18,7 @@ import Map, {
 import { LoginDialog, SignupDialog } from "./components/auth";
 import { FilterControls, IncidentFilter } from "./components/incident-filter";
 import { IncidentPopup } from "./components/incident-popup";
-import { RecentIncidentsCard, RecentIncidentsSheet } from "./components/recent-incidents";
+import { RecentIncidentsCard } from "./components/recent-incidents";
 import { ReportIncidentDialog } from "./components/report-incident";
 
 interface ClickLocation {
@@ -249,8 +249,6 @@ export default function Platform() {
           />
         )}
       </Map>
-
-      {/* Header Controls */}
       <div className="absolute top-4 right-4 flex gap-2">
         {!isLoggedIn && (
           <>
@@ -309,20 +307,10 @@ export default function Platform() {
           </div>
         )}
       </div>
-
-      {/* Filter Controls */}
       <FilterControls filter={filter} onFilterChange={setFilter} />
-
       <RecentIncidentsCard
         incidents={incidents}
         onSelectIncident={handleSelectIncident}
-      />
-
-      <RecentIncidentsSheet
-        incidents={incidents}
-        onSelectIncident={(incident) => {
-          setPopupInfo(incident);
-        }}
       />
     </>
   );
