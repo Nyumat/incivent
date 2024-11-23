@@ -124,3 +124,16 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Forgive me <3 */
+.mapboxgl-ctrl-attrib-inner {
+  display: none;
+}
+
+.mapboxgl-ctrl-logo {
+  opacity: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
