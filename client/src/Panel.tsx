@@ -1,8 +1,10 @@
 import React from "react";
+import { ModeToggle } from "./components/mode-toggle";
 
 function ControlPanel() {
   return (
     <div className="control-panel">
+      <ModeToggle />
       <h3>Marker, Popup, NavigationControl and FullscreenControl </h3>
       <p>
         Map showing top 20 most populated cities of the United States. Click on
