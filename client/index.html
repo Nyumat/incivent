@@ -3,7 +3,12 @@
 
 <head>
     <meta charset='UTF-8' />
-    <title>react-map-gl Example</title>
+    <title>Incivent</title>
+    <meta name="description"
+        content="Incivent is a real-time community awareness platform that empowers neighborhoods to stay informed and connected through live incident tracking and collaboration.">
+    <meta name="keywords"
+        content="community app, real-time alerts, incident tracking, safety, live map, neighborhood collaboration">
+    <meta name="author" content="Incivent">
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet">
     <style>
         body {
@@ -11,7 +16,7 @@
             font-family: Helvetica, Arial, sans-serif;
         }
 
-        #map {
+        #root {
             width: 100vw;
             height: 100vh;
         }
@@ -35,11 +40,11 @@
 </head>
 
 <body>
-    <div id="map"></div>
+    <div id="root"></div>
 </body>
 <script type="module" type="text/javascript">
-    import { renderToDom } from './src/app.tsx';
-    renderToDom(document.getElementById('map'));
+    import { renderToDom } from './src/main.tsx';
+    renderToDom(document.getElementById('root'));
 </script>
 
 </html>
