@@ -13,15 +13,14 @@ import Map, {
   GeolocateControl,
   Marker,
   NavigationControl,
-  Popup,
   ScaleControl,
 } from "react-map-gl";
 import { LoginDialog, SignupDialog } from "./components/auth";
 import { FilterControls, IncidentFilter } from "./components/incident-filter";
-import { RecentIncidentsCard } from "./components/recent-incidents";
+import { IncidentPopup } from "./components/incident-popup";
+import { RecentIncidentsCard, RecentIncidentsSheet } from "./components/recent-incidents";
 import { ReportIncidentDialog } from "./components/report-incident";
 
-// Add these new types
 interface ClickLocation {
   longitude: number;
   latitude: number;
@@ -81,8 +80,10 @@ const MOCK_INCIDENTS: Incident[] = [
 export default function Platform() {
   const mapRef = useRef<MapRef>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [reportDialogKey, setReportDialogKey] = useState(0);
   const [popupInfo, setPopupInfo] = useState<PopupInfo>(null);
   const [filter, setFilter] = useState<IncidentFilter>("all");
+  const [isSelectingLocation, setIsSelectingLocation] = useState(false);
   const [incidents, setIncidents] = useState<Incident[]>(MOCK_INCIDENTS);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(
     null
@@ -98,6 +99,32 @@ export default function Platform() {
     // TODO: do something with the map
   }, []);
 
+  const getCurrentMapCenter = useCallback(() => {
+    if (!mapRef.current) return null;
+    const center = mapRef.current.getCenter();
+    return {
+      latitude: center.lat,
+      longitude: center.lng,
+    };
+  }, []);
+
+  const handleMapClick = useCallback(
+    (event: mapboxgl.MapLayerMouseEvent) => {
+      if (isSelectingLocation) {
+        setSelectedLocation({
+          latitude: event.lngLat.lat,
+          longitude: event.lngLat.lng,
+        });
+        setIsSelectingLocation(false);
+        setShowReportDialog(true);
+        return;
+      }
+
+      setContextMenu(null);
+    },
+    [isSelectingLocation]
+  );
+
   const handleContextMenu = (event: mapboxgl.MapLayerMouseEvent) => {
     event.preventDefault();
 
@@ -111,7 +138,6 @@ export default function Platform() {
 
   const handleReport = (location: { longitude: number; latitude: number }) => {
     if (!isLoggedIn) {
-      // Optionally show login dialog
       return;
     }
     setSelectedLocation(location);
@@ -174,14 +200,21 @@ export default function Platform() {
           pitch: 0,
         }}
         onContextMenu={handleContextMenu}
-        onClick={() => setContextMenu(null)}
+        onClick={handleMapClick}
         mapStyle="mapbox://styles/mapbox/dark-v9"
         mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+        cursor={isSelectingLocation ? "crosshair" : "default"}
       >
         <GeolocateControl position="top-left" />
         <FullscreenControl position="top-left" />
         <NavigationControl position="top-left" />
         <ScaleControl />
+
+        {isSelectingLocation && (
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-background/90 text-foreground px-4 py-2 rounded-full shadow-lg">
+            Click on the map to select incident location
+          </div>
+        )}
 
         {contextMenu && (
           <MapContextMenu
@@ -210,25 +243,10 @@ export default function Platform() {
         {pins}
 
         {popupInfo && (
-          <Popup
-            anchor="top"
-            longitude={popupInfo.longitude}
-            latitude={popupInfo.latitude}
+          <IncidentPopup
+            incident={popupInfo}
             onClose={() => setPopupInfo(null)}
-          >
-            <div className="p-2">
-              <h3 className="font-bold">{popupInfo.title}</h3>
-              <p className="text-sm">{popupInfo.description}</p>
-              <div className="text-xs text-gray-500 mt-1">
-                <p>Type: {popupInfo.type}</p>
-                <p>Severity: {popupInfo.severity}</p>
-                <p>
-                  Reported: {new Date(popupInfo.timestamp).toLocaleString()}
-                </p>
-                <p>By: {popupInfo.reportedBy}</p>
-              </div>
-            </div>
-          </Popup>
+          />
         )}
       </Map>
 
@@ -254,16 +272,18 @@ export default function Platform() {
         {isLoggedIn && (
           <div className="absolute top-4 right-4">
             <ReportIncidentDialog
+              key={reportDialogKey}
               trigger={
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="destructive"
-                    onClick={() => setShowReportDialog(true)}
-                  >
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setShowReportDialog(true);
+                    setReportDialogKey((prev) => prev + 1);
+                  }}
+                >
                   <Plus className="w-4 h-4" />
-                    Report Incident
-                  </Button>
-                </div>
+                  Report Incident
+                </Button>
               }
               onSubmit={(values) => {
                 const newIncident = {
@@ -271,15 +291,20 @@ export default function Platform() {
                   ...values,
                   timestamp: new Date().toISOString(),
                   reportedBy: "CurrentUser",
-                  latitude: selectedLocation?.latitude ?? 40.7128,
-                  longitude: selectedLocation?.longitude ?? -74.006,
+                  latitude: values.location.latitude,
+                  longitude: values.location.longitude,
                 };
                 setIncidents([...incidents, newIncident]);
                 setSelectedLocation(null);
+                setIsSelectingLocation(false);
               }}
               initialLocation={selectedLocation}
+              mapCenter={getCurrentMapCenter()}
               open={showReportDialog}
               onOpenChange={setShowReportDialog}
+              onRequestLocationSelect={() => {
+                setIsSelectingLocation(true);
+              }}
             />
           </div>
         )}
@@ -293,17 +318,16 @@ export default function Platform() {
         onSelectIncident={handleSelectIncident}
       />
 
-      {/* <RecentIncidentsSheet
+      <RecentIncidentsSheet
         incidents={incidents}
         onSelectIncident={(incident) => {
           setPopupInfo(incident);
         }}
-      /> */}
+      />
     </>
   );
 }
 
-// New context menu component
 function MapContextMenu({
   longitude,
   latitude,
