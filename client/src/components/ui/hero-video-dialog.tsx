@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Play, XIcon } from "lucide-react";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -71,7 +71,7 @@ export default function HeroVideoDialog({
   animationStyle = "from-center",
   videoSrc,
   thumbnailSrc,
-  thumbnailAlt = "Video thumbnail",
+  thumbnailAlt = "Thumbnail",
   className,
 }: HeroVideoProps) {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
@@ -124,12 +124,14 @@ export default function HeroVideoDialog({
                 <XIcon className="size-5" />
               </motion.button>
               <div className="size-full border-2 border-white rounded-2xl overflow-hidden isolate z-[1] relative">
-                <iframe
+                <video
                   src={videoSrc}
-                  className="size-full rounded-2xl"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                ></iframe>
+                  className="w-full h-full object-cover"
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                />
               </div>
             </motion.div>
           </motion.div>
