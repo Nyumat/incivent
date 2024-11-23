@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router";
 import { LandingPage } from "./landing";
 import Platform from "./platform";
 
-export default function App() {
+export function Application() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
