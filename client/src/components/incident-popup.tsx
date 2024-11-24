@@ -1,4 +1,16 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -7,15 +19,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { type Incident } from "@/platform";
+import { useUser } from "@/hooks/use-user";
+import { api, type Incident } from "@/platform";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   AlertOctagon,
   AlertTriangle,
   Clock,
+  Trash2,
   User,
 } from "lucide-react";
 import { Popup } from "react-map-gl";
+import { toast } from "sonner";
 
 const getSeverityConfig = (severity: string) => {
   switch (severity) {
@@ -61,8 +77,24 @@ interface IncidentPopupProps {
 }
 
 export function IncidentPopup({ incident, onClose }: IncidentPopupProps) {
+  const { user } = useUser();
+  const queryClient = useQueryClient();
   const severityConfig = getSeverityConfig(incident.severity);
   const SeverityIcon = severityConfig.icon;
+
+  const { mutate: deleteIncident, isPending: isDeleting } = useMutation({
+    mutationFn: () => api.deleteIncident(incident._id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      toast.success("Incident deleted successfully");
+      onClose();
+    },
+    onError: () => {
+      toast.error("Failed to delete incident");
+    },
+  });
+
+  const isOwner = user?.id === incident.reportedBy._id;
 
   return (
     <Popup
@@ -80,12 +112,48 @@ export function IncidentPopup({ incident, onClose }: IncidentPopupProps) {
             <CardTitle className="text-base leading-tight">
               {incident.title}
             </CardTitle>
-            <Badge
-              variant="secondary"
-              className={`${getTypeConfig(incident.type)} capitalize`}
-            >
-              {incident.type}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className={`${getTypeConfig(incident.type)} capitalize`}
+              >
+                {incident.type}
+              </Badge>
+              {isOwner && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Delete Incident Report
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this incident report?
+                        This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteIncident()}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? "Deleting..." : "Delete"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </div>
           <CardDescription className="text-sm mt-1">
             {incident.description}
@@ -116,7 +184,7 @@ export function IncidentPopup({ incident, onClose }: IncidentPopupProps) {
             </div>
             <div className="flex items-center text-xs text-muted-foreground gap-1.5">
               <User className="w-3.5 h-3.5" />
-              <span>Reported by {incident.reportedBy}</span>
+              <span>Reported by {incident.reportedBy.username}</span>
             </div>
           </div>
         </CardContent>
