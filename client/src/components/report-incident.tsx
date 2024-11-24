@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useWebSocket } from "@/contexts/web-socket-context";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -74,6 +75,7 @@ export function ReportIncidentDialog({
   onRequestLocationSelect,
 }: ReportIncidentDialogProps) {
   const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
+  const { sendNotification } = useWebSocket();
   const queryClient = useQueryClient();
 
   const { mutate: createIncident, isPending: isSubmitting } = useMutation({
@@ -95,7 +97,8 @@ export function ReportIncidentDialog({
       );
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (newIncident) => {
+      sendNotification(newIncident);
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
       onSubmitSuccess?.();
     },

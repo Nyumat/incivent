@@ -133,7 +133,6 @@ export default function Platform() {
   } | null>(null);
   const [customMarkers, setCustomMarkers] = useState<CustomMarker[]>([]);
 
-  // Load custom markers from localStorage on mount
   useEffect(() => {
     const savedMarkers = localStorage.getItem(STORAGE_KEY);
     if (savedMarkers) {
@@ -141,7 +140,6 @@ export default function Platform() {
     }
   }, []);
 
-  // Save custom markers to localStorage when they change
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customMarkers));
   }, [customMarkers]);

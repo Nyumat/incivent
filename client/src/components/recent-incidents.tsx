@@ -9,14 +9,86 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { Incident } from "@/platform";
-import { AlertTriangle, Bell, ChevronUp, Clock } from "lucide-react";
+import { AlertTriangle, Bell, ChevronUp, Clock, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useUser } from "@/hooks/use-user";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/platform";
+import { toast } from "sonner";
+import { useWebSocket } from "@/contexts/web-socket-context";
 
 interface RecentIncidentsProps {
   incidents: Incident[];
   onSelectIncident: (incident: Incident) => void;
+}
+
+function DeleteIncidentButton({ incident }: { incident: Incident }) {
+  const queryClient = useQueryClient();
+  const { sendDeletion } = useWebSocket();
+
+  const { mutate: deleteIncident, isPending: isDeleting } = useMutation({
+    mutationFn: () => api.deleteIncident(incident._id),
+    onSuccess: () => {
+      sendDeletion(incident._id);
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      toast.success("Incident deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete incident");
+    },
+  });
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Incident Report</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this incident report? This action
+            cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteIncident();
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 export function RecentIncidentsCard({
@@ -24,6 +96,8 @@ export function RecentIncidentsCard({
   onSelectIncident,
 }: RecentIncidentsProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { user } = useUser();
+
   return (
     <Card
       className="fixed bottom-4 right-4 w-80 shadow-lg transition-all duration-300"
@@ -89,6 +163,9 @@ export function RecentIncidentsCard({
                         </span>
                       </div>
                     </div>
+                    {user?.id === incident.reportedBy._id && (
+                      <DeleteIncidentButton incident={incident} />
+                    )}
                   </div>
                 </div>
               ))}

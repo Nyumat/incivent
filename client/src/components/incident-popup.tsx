@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useWebSocket } from "@/contexts/web-socket-context";
 import { useUser } from "@/hooks/use-user";
 import { api, type Incident } from "@/platform";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -30,6 +31,7 @@ import {
   Trash2,
   User,
 } from "lucide-react";
+import { useEffect } from "react";
 import { Popup } from "react-map-gl";
 import { toast } from "sonner";
 
@@ -80,11 +82,32 @@ export function IncidentPopup({ incident, onClose }: IncidentPopupProps) {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const severityConfig = getSeverityConfig(incident.severity);
+  const { sendDeletion } = useWebSocket();
   const SeverityIcon = severityConfig.icon;
+
+  useEffect(() => {
+    const handleDeletion = (event: CustomEvent<{ id: string }>) => {
+      if (event.detail.id === incident._id) {
+        onClose();
+      }
+    };
+
+    window.addEventListener(
+      "incident-deleted",
+      handleDeletion as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        "incident-deleted",
+        handleDeletion as EventListener
+      );
+    };
+  }, [incident._id, onClose]);
 
   const { mutate: deleteIncident, isPending: isDeleting } = useMutation({
     mutationFn: () => api.deleteIncident(incident._id),
     onSuccess: () => {
+      sendDeletion(incident._id);
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
       toast.success("Incident deleted successfully");
       onClose();
