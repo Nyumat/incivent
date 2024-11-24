@@ -25,9 +25,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { AlertTriangle, MapPin, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import * as z from "zod";
 
 const reportFormSchema = z.object({
@@ -52,7 +55,7 @@ const reportFormSchema = z.object({
 type ReportFormValues = z.infer<typeof reportFormSchema>;
 
 interface ReportIncidentDialogProps {
-  onSubmit: (values: ReportFormValues) => void;
+  onSubmitSuccess?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   initialLocation?: { latitude: number; longitude: number } | null;
@@ -62,7 +65,7 @@ interface ReportIncidentDialogProps {
 }
 
 export function ReportIncidentDialog({
-  onSubmit,
+  onSubmitSuccess,
   open,
   onOpenChange,
   initialLocation,
@@ -71,6 +74,35 @@ export function ReportIncidentDialog({
   onRequestLocationSelect,
 }: ReportIncidentDialogProps) {
   const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { mutate: createIncident, isPending: isSubmitting } = useMutation({
+    mutationFn: async (data: ReportFormValues) => {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        "/api/incidents",
+        {
+          ...data,
+          latitude: data.location.latitude,
+          longitude: data.location.longitude,
+          timestamp: new Date().toISOString(),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      onSubmitSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
 
   const defaultValues: Partial<ReportFormValues> = {
     type: "crime",
@@ -103,7 +135,7 @@ export function ReportIncidentDialog({
   };
 
   function handleSubmit(values: ReportFormValues) {
-    onSubmit(values);
+    createIncident(values);
     onOpenChange?.(false);
     form.reset();
     setHasRequestedLocation(false);
@@ -293,9 +325,9 @@ export function ReportIncidentDialog({
               <Button
                 type="submit"
                 variant="destructive"
-                disabled={!hasLocation}
+                disabled={!hasLocation || isSubmitting}
               >
-                Submit Report
+                {isSubmitting ? "Submitting..." : "Submit Report"}
               </Button>
             </div>
           </form>
