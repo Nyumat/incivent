@@ -8,8 +8,9 @@ router.post(
   "/incidents",
   authMiddleware,
   async (req: Request, res: Response) => {
+    const reportedBy = req.auth?.id;
     try {
-      const incident = new IncidentModel(req.body);
+      const incident = new IncidentModel({ ...req.body, reportedBy });
       await incident.save();
       res.status(201).send(incident);
     } catch (error) {
@@ -21,9 +22,9 @@ router.post(
 router.get(
   "/incidents",
   authMiddleware,
-  async (req: Request, res: Response) => {
+  async (res: Response) => {
     try {
-      const incidents = await IncidentModel.find();
+      const incidents = await IncidentModel.find().populate("reportedBy");
       res.status(200).send(incidents);
     } catch (error) {
       res.status(500).send(error);

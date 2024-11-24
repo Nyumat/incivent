@@ -4,7 +4,6 @@ export type IncidentType = "crime" | "emergency" | "hazard";
 export type IncidentSeverity = "low" | "medium" | "high";
 
 export interface Incident extends mongoose.Document {
-  id: number;
   type: IncidentType;
   title: string;
   description: string;
@@ -16,7 +15,6 @@ export interface Incident extends mongoose.Document {
 }
 
 const incidentSchema = new mongoose.Schema<Incident>({
-  id: { type: Number, required: true, unique: true },
   type: {
     type: String,
     enum: ["crime", "emergency", "hazard"],
