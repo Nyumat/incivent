@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 
 interface User {
   id: string;
@@ -11,6 +12,7 @@ interface User {
 export const useUser = () => {
   const [user, setUser] = useState<User | undefined>(undefined);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -32,6 +34,7 @@ export const useUser = () => {
           setUser(undefined);
           setIsLoggedIn(false);
           console.log("Failed to fetch user");
+          navigate("/platform?login=true");
           throw new Error("Failed to fetch user");
         }
       } catch (error) {
