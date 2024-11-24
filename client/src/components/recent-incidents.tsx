@@ -24,7 +24,6 @@ export function RecentIncidentsCard({
   onSelectIncident,
 }: RecentIncidentsProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-
   return (
     <Card
       className="fixed bottom-4 right-4 w-80 shadow-lg transition-all duration-300"
@@ -52,43 +51,49 @@ export function RecentIncidentsCard({
         </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px] pr-4">
-          {incidents
-            .slice()
-            .reverse()
-            .map((incident) => (
-              <div
-                key={incident.id}
-                className="mb-4 cursor-pointer group"
-                onClick={() => onSelectIncident(incident)}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-medium group-hover:text-primary">
-                      {incident.title}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge
-                        variant={
-                          incident.severity === "high"
-                            ? "destructive"
-                            : incident.severity === "medium"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {incident.type}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(incident.timestamp).toLocaleString()}
-                      </span>
+        {incidents.length === 0 ? (
+          <div className="text-muted-foreground text-center">
+            No recent incidents
+          </div>
+        ) : (
+          <ScrollArea className="h-[300px] pr-4">
+            {incidents
+              .slice()
+              .reverse()
+              .map((incident) => (
+                <div
+                  key={incident._id}
+                  className="mb-4 cursor-pointer group"
+                  onClick={() => onSelectIncident(incident)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-medium group-hover:text-primary">
+                        {incident.title}
+                      </h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge
+                          variant={
+                            incident.severity === "high"
+                              ? "destructive"
+                              : incident.severity === "medium"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {incident.type}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(incident.timestamp).toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-        </ScrollArea>
+              ))}
+          </ScrollArea>
+        )}
       </CardContent>
     </Card>
   );
@@ -123,7 +128,7 @@ export function RecentIncidentsSheet({
             .reverse()
             .map((incident) => (
               <Card
-                key={incident.id}
+                key={incident._id}
                 className="mb-4 cursor-pointer hover:bg-accent"
                 onClick={() => {
                   onSelectIncident(incident);
