@@ -1,15 +1,32 @@
 <!doctype html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset='UTF-8' />
-    <title>Incivent</title>
+    <title>Incivent - Community Safety & Awareness</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
         content="Incivent is a real-time community awareness platform that empowers neighborhoods to stay informed and connected through live incident tracking and collaboration.">
     <meta name="keywords"
         content="community app, real-time alerts, incident tracking, safety, live map, neighborhood collaboration">
-
     <meta name="author" content="Incivent">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dont-commit-crimes.vercel.app/">
+    <meta property="og:title" content="Incivent - Community Safety & Awareness">
+    <meta property="og:description"
+        content="Incivent is a real-time community awareness platform that empowers neighborhoods to stay informed and connected through live incident tracking and collaboration.">
+    <meta property="og:image" content="https://dont-commit-crimes.vercel.app/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://dont-commit-crimes.vercel.app/">
+    <meta name="twitter:title" content="Incivent - Community Safety & Awareness">
+    <meta name="twitter:description"
+        content="Incivent is a real-time community awareness platform that empowers neighborhoods to stay informed and connected through live incident tracking and collaboration.">
+    <meta name="twitter:image" content="https://dont-commit-crimes.vercel.app/og-image.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon.png">
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet">
     <style>
         body {
@@ -43,8 +60,8 @@
 <body>
     <div id="root"></div>
 </body>
-<script type="module" type="text/javascript">
-    import { renderToDom } from './src/main.tsx';
+<script type="module">
+    import { renderToDom } from './src/main';
     renderToDom(document.getElementById('root'));
 </script>
 
