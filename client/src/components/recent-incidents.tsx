@@ -28,7 +28,7 @@ import { useUser } from "@/hooks/use-user";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/platform";
 import { toast } from "sonner";
-import { useWebSocket } from "@/contexts/web-socket-context";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 interface RecentIncidentsProps {
   incidents: Incident[];

@@ -19,8 +19,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useWebSocket } from "@/contexts/web-socket-context";
 import { useUser } from "@/hooks/use-user";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { api, type Incident } from "@/platform";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {

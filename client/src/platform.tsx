@@ -77,6 +77,7 @@ export type PopupInfo = Incident | null;
 
 const STORAGE_KEY = "custom_markers";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const api = {
   getIncidents: async (): Promise<Incident[]> => {
     const { data } = await axios.get("/api/incidents", {

@@ -1,6 +1,6 @@
 import type { Incident } from "@/platform";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { createContext, useContext, useEffect, useRef } from "react";
+import React, { createContext, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 interface WebSocketContextType {
@@ -8,7 +8,10 @@ interface WebSocketContextType {
   sendDeletion: (incidentId: string) => void;
 }
 
-const WebSocketContext = createContext<WebSocketContextType | null>(null);
+// eslint-disable-next-line react-refresh/only-export-components
+export const WebSocketContext = createContext<WebSocketContextType | null>(
+  null
+);
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const ws = useRef<WebSocket | null>(null);
@@ -117,11 +120,3 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     </WebSocketContext.Provider>
   );
 }
-
-export const useWebSocket = () => {
-  const context = useContext(WebSocketContext);
-  if (!context) {
-    throw new Error("useWebSocket must be used within a WebSocketProvider");
-  }
-  return context;
-};
