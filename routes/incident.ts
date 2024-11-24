@@ -22,12 +22,12 @@ router.post(
 router.get(
   "/incidents",
   authMiddleware,
-  async (res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const incidents = await IncidentModel.find().populate("reportedBy");
-      res.status(200).send(incidents);
+      return res.status(200).send(incidents);
     } catch (error) {
-      res.status(500).send(error);
+      return res.status(500).send(error);
     }
   }
 );
