@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider.tsx";
 import "./index.css";
 import { LandingPage } from "./landing";
@@ -25,6 +26,7 @@ export function renderToDom(container: HTMLElement) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
           <Application />
+          <Toaster />
         </ThemeProvider>
         <ReactQueryDevtools />
       </QueryClientProvider>

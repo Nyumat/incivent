@@ -8,18 +8,30 @@ import { Error } from "mongoose";
 const router = Router();
 
 router.post("/signup", async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, name, username } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required." });
+  if (!email || !password || !name || !username) {
+    return res
+      .status(400)
+      .json({ error: "Email, password, name, and username are required." });
   }
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ email, password: hashedPassword });
+    const newUser = new User({
+      email,
+      password: hashedPassword,
+      name,
+      username,
+    });
     await newUser.save();
 
-    const token = generateToken({ id: newUser._id, email: newUser.email });
+    const token = generateToken({
+      id: newUser._id,
+      email: newUser.email,
+      name: newUser.name,
+      username: newUser.username,
+    });
     res.status(201).json({ message: "User created successfully", token });
   } catch (error) {
     if (error instanceof Error) {
@@ -61,6 +73,11 @@ router.post("/login", async (req: Request, res: Response) => {
 router.get("/checkAuth", authMiddleware, (req, res) => {
   const user = req.auth;
   res.status(200).json({ message: "Authorized access", user });
+});
+
+router.get("/user", authMiddleware, (req, res) => {
+  const user = req.auth;
+  res.status(200).json(user);
 });
 
 export default router;

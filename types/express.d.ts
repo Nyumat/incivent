@@ -8,4 +8,6 @@ declare namespace Express {
 type Auth = {
   id: string;
   email: string;
+  name: string;
+  username: string;
 };

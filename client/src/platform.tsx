@@ -20,6 +20,7 @@ import { FilterControls, IncidentFilter } from "./components/incident-filter";
 import { IncidentPopup } from "./components/incident-popup";
 import { RecentIncidentsCard } from "./components/recent-incidents";
 import { ReportIncidentDialog } from "./components/report-incident";
+import { useUser } from "./hooks/use-user";
 
 interface ClickLocation {
   longitude: number;
@@ -55,31 +56,130 @@ export type PopupInfo = Incident | null;
 const MOCK_INCIDENTS: Incident[] = [
   {
     id: 1,
-    type: "crime",
+    type: "emergency",
     title: "Suspicious Activity",
-    description: "Person looking into car windows",
-    latitude: 40.7128,
-    longitude: -74.006,
-    timestamp: new Date().toISOString(),
+    description:
+      "Incident details for title Suspicious Activity. This incident was reported due to unusual activity in the area.",
+    latitude: 45.468208,
+    longitude: -122.579274,
+    timestamp: "2024-11-23T18:29:45.527189",
     severity: "medium",
-    reportedBy: "User123",
+    reportedBy: "User702",
   },
   {
     id: 2,
-    type: "emergency",
+    type: "crime",
     title: "Fire Reported",
-    description: "Small fire in trash can",
-    latitude: 40.758,
-    longitude: -73.9855,
-    timestamp: new Date().toISOString(),
-    severity: "high",
-    reportedBy: "User456",
+    description:
+      "Incident details for title Fire Reported. This incident was reported due to unusual activity in the area.",
+    latitude: 45.463664,
+    longitude: -122.587639,
+    timestamp: "2024-11-23T18:29:45.527219",
+    severity: "medium",
+    reportedBy: "User754",
   },
+  {
+    id: 3,
+    type: "crime",
+    title: "Car Accident",
+    description:
+      "Incident details for title Car Accident. This incident was reported due to unusual activity in the area.",
+    latitude: 45.464175,
+    longitude: -122.583672,
+    timestamp: "2024-11-23T18:29:45.527230",
+    severity: "high",
+    reportedBy: "User910",
+  },
+  {
+    id: 4,
+    type: "hazard",
+    title: "Theft Reported",
+    description:
+      "Incident details for title Theft Reported. This incident was reported due to unusual activity in the area.",
+    latitude: 45.471214,
+    longitude: -122.587342,
+    timestamp: "2024-11-23T18:29:45.527239",
+    severity: "low",
+    reportedBy: "User700",
+  },
+  {
+    id: 5,
+    type: "hazard",
+    title: "Medical Emergency",
+    description:
+      "Incident details for title Medical Emergency. This incident was reported due to unusual activity in the area.",
+    latitude: 45.465396,
+    longitude: -122.586709,
+    timestamp: "2024-11-23T18:29:45.527249",
+    severity: "high",
+    reportedBy: "User700",
+  },
+  {
+    id: 6,
+    type: "hazard",
+    title: "Gas Leak",
+    description:
+      "Incident details for title Gas Leak. This incident was reported due to unusual activity in the area.",
+    latitude: 45.467512,
+    longitude: -122.570941,
+    timestamp: "2024-11-23T18:29:45.527533",
+    severity: "low",
+    reportedBy: "User617",
+  },
+  {
+    id: 7,
+    type: "emergency",
+    title: "Medical Emergency",
+    description:
+      "Incident details for title Medical Emergency. This incident was reported due to unusual activity in the area.",
+    latitude: 45.470536,
+    longitude: -122.575725,
+    timestamp: "2024-11-23T18:29:45.527542",
+    severity: "low",
+    reportedBy: "User730",
+  },
+  {
+    id: 8,
+    type: "emergency",
+    title: "Gas Leak",
+    description:
+      "Incident details for title Gas Leak. This incident was reported due to unusual activity in the area.",
+    latitude: 45.464092,
+    longitude: -122.583514,
+    timestamp: "2024-11-23T18:29:45.527550",
+    severity: "low",
+    reportedBy: "User880",
+  },
+  {
+    id: 9,
+    type: "emergency",
+    title: "Flood Warning",
+    description:
+      "Incident details for title Flood Warning. This incident was reported due to unusual activity in the area.",
+    latitude: 45.470267,
+    longitude: -122.58802,
+    timestamp: "2024-11-23T18:29:45.527558",
+    severity: "medium",
+    reportedBy: "User935",
+  },
+  {
+    id: 10,
+    type: "crime",
+    title: "Suspicious Vehicle",
+    description:
+      "Incident details for title Suspicious Vehicle. This incident was reported due to unusual activity in the area.",
+    latitude: 45.470819,
+    longitude: -122.584104,
+    timestamp: "2024-11-23T18:29:45.527567",
+    severity: "medium",
+    reportedBy: "User512",
+  },
+  // More entries continue in similar format...
 ];
 
 export default function Platform() {
+  const { user, isLoggedIn } = useUser();
   const mapRef = useRef<MapRef>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [reportDialogKey, setReportDialogKey] = useState(0);
   const [popupInfo, setPopupInfo] = useState<PopupInfo>(null);
   const [filter, setFilter] = useState<IncidentFilter>("all");
@@ -96,8 +196,13 @@ export default function Platform() {
   } | null>(null);
 
   const onMapLoad = useCallback(() => {
-    // TODO: do something with the map
+    const button = document.querySelector(".mapboxgl-ctrl-icon");
+    if (button) {
+      (button as HTMLElement).click();
+    }
   }, []);
+
+  console.log(user, isLoggedIn);
 
   const getCurrentMapCenter = useCallback(() => {
     if (!mapRef.current) return null;
@@ -158,6 +263,11 @@ export default function Platform() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.location.reload();
+  };
+
   const pins = useMemo(
     () =>
       incidents
@@ -193,8 +303,8 @@ export default function Platform() {
         ref={mapRef}
         onLoad={onMapLoad}
         initialViewState={{
-          latitude: 40.7128,
-          longitude: -74.006,
+          latitude: 45.5051,
+          longitude: -122.675,
           zoom: 12,
           bearing: 0,
           pitch: 0,
@@ -252,58 +362,54 @@ export default function Platform() {
       <div className="absolute top-4 right-4 flex gap-2">
         {!isLoggedIn && (
           <>
-            <LoginDialog
-              onLogin={(email, password) => {
-                console.log({ email, password });
-                setIsLoggedIn(true);
-              }}
-            />
-            <SignupDialog
-              onSignup={(email, password, name) => {
-                console.log({ email, password, name });
-                setIsLoggedIn(true);
-              }}
-            />
+            <LoginDialog />
+            <SignupDialog />
           </>
         )}
 
         {isLoggedIn && (
           <div className="absolute top-4 right-4">
-            <ReportIncidentDialog
-              key={reportDialogKey}
-              trigger={
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    setShowReportDialog(true);
-                    setReportDialogKey((prev) => prev + 1);
-                  }}
-                >
-                  <Plus className="w-4 h-4" />
-                  Report Incident
-                </Button>
-              }
-              onSubmit={(values) => {
-                const newIncident = {
-                  id: incidents.length + 1,
-                  ...values,
-                  timestamp: new Date().toISOString(),
-                  reportedBy: "CurrentUser",
-                  latitude: values.location.latitude,
-                  longitude: values.location.longitude,
-                };
-                setIncidents([...incidents, newIncident]);
-                setSelectedLocation(null);
-                setIsSelectingLocation(false);
-              }}
-              initialLocation={selectedLocation}
-              mapCenter={getCurrentMapCenter()}
-              open={showReportDialog}
-              onOpenChange={setShowReportDialog}
-              onRequestLocationSelect={() => {
-                setIsSelectingLocation(true);
-              }}
-            />
+            <div className="flex gap-2">
+              <ReportIncidentDialog
+                key={reportDialogKey}
+                trigger={
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      setShowReportDialog(true);
+                      setReportDialogKey((prev) => prev + 1);
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Report Incident
+                  </Button>
+                }
+                onSubmit={(values) => {
+                  const newIncident = {
+                    id: incidents.length + 1,
+                    ...values,
+                    timestamp: new Date().toISOString(),
+                    reportedBy: "CurrentUser",
+                    latitude: values.location.latitude,
+                    longitude: values.location.longitude,
+                  };
+                  setIncidents([...incidents, newIncident]);
+                  setSelectedLocation(null);
+                  setIsSelectingLocation(false);
+                }}
+                initialLocation={selectedLocation}
+                mapCenter={getCurrentMapCenter()}
+                open={showReportDialog}
+                onOpenChange={setShowReportDialog}
+                onRequestLocationSelect={() => {
+                  setIsSelectingLocation(true);
+                }}
+              />
+
+              <Button variant="outline" onClick={handleLogout}>
+                Logout
+              </Button>
+            </div>
           </div>
         )}
       </div>

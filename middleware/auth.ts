@@ -18,7 +18,7 @@ export const authMiddleware = (
   try {
     const decoded = verifyToken(token);
     req.token = token;
-    req.auth = { id: decoded.id, email: decoded.email };
+    req.auth = { id: decoded.id, email: decoded.email, name: decoded.name, username: decoded.username };
     next();
   } catch (error) {
     res.status(401).json({ error: "Invalid or expired token." });
