@@ -5,8 +5,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AlertCircle, Flag, Navigation, Plus } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { AlertCircle, Flag, Navigation, Plus, X } from "lucide-react";
+import mapboxgl from "mapbox-gl";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MapRef } from "react-map-gl";
 import Map, {
   FullscreenControl,
@@ -15,6 +18,7 @@ import Map, {
   NavigationControl,
   ScaleControl,
 } from "react-map-gl";
+import { toast } from "sonner";
 import { LoginDialog, SignupDialog } from "./components/auth";
 import { FilterControls, IncidentFilter } from "./components/incident-filter";
 import { IncidentPopup } from "./components/incident-popup";
@@ -29,18 +33,25 @@ interface ClickLocation {
   y: number;
 }
 
+interface CustomMarker {
+  id: string;
+  longitude: number;
+  latitude: number;
+}
+
 interface MapContextMenuProps {
   longitude: number;
   latitude: number;
   onClose: () => void;
   onReport: (location: { longitude: number; latitude: number }) => void;
+  onMarkLocation: () => void;
 }
 
 export type IncidentType = "crime" | "emergency" | "hazard";
 export type IncidentSeverity = "low" | "medium" | "high";
 
-export type Incident = {
-  id: number;
+export interface Incident {
+  _id: string;
   type: IncidentType;
   title: string;
   description: string;
@@ -48,143 +59,69 @@ export type Incident = {
   longitude: number;
   timestamp: string;
   severity: IncidentSeverity;
-  reportedBy: string;
-};
+  reportedBy: InciventUser;
+}
+
+export interface IUser {
+  _id: string;
+  name: string;
+  email: string;
+  username: string;
+  password: string;
+  __v: number;
+}
+
+export type InciventUser = Omit<IUser, "__v" | "password">;
 
 export type PopupInfo = Incident | null;
 
-const MOCK_INCIDENTS: Incident[] = [
-  {
-    id: 1,
-    type: "emergency",
-    title: "Suspicious Activity",
-    description:
-      "Incident details for title Suspicious Activity. This incident was reported due to unusual activity in the area.",
-    latitude: 45.468208,
-    longitude: -122.579274,
-    timestamp: "2024-11-23T18:29:45.527189",
-    severity: "medium",
-    reportedBy: "User702",
+const STORAGE_KEY = "custom_markers";
+
+export const api = {
+  getIncidents: async (): Promise<Incident[]> => {
+    const { data } = await axios.get("/api/incidents", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    return data;
   },
-  {
-    id: 2,
-    type: "crime",
-    title: "Fire Reported",
-    description:
-      "Incident details for title Fire Reported. This incident was reported due to unusual activity in the area.",
-    latitude: 45.463664,
-    longitude: -122.587639,
-    timestamp: "2024-11-23T18:29:45.527219",
-    severity: "medium",
-    reportedBy: "User754",
+  createIncident: async (
+    incidentData: Omit<Incident, "_id" | "reportedBy">
+  ) => {
+    const { data } = await axios.post("/api/incidents", incidentData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    return data;
   },
-  {
-    id: 3,
-    type: "crime",
-    title: "Car Accident",
-    description:
-      "Incident details for title Car Accident. This incident was reported due to unusual activity in the area.",
-    latitude: 45.464175,
-    longitude: -122.583672,
-    timestamp: "2024-11-23T18:29:45.527230",
-    severity: "high",
-    reportedBy: "User910",
+  updateIncident: async (id: string, updates: Partial<Incident>) => {
+    const { data } = await axios.patch(`/api/incidents/${id}`, updates, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    return data;
   },
-  {
-    id: 4,
-    type: "hazard",
-    title: "Theft Reported",
-    description:
-      "Incident details for title Theft Reported. This incident was reported due to unusual activity in the area.",
-    latitude: 45.471214,
-    longitude: -122.587342,
-    timestamp: "2024-11-23T18:29:45.527239",
-    severity: "low",
-    reportedBy: "User700",
+  deleteIncident: async (id: string) => {
+    const { data } = await axios.delete(`/api/incidents/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    return data;
   },
-  {
-    id: 5,
-    type: "hazard",
-    title: "Medical Emergency",
-    description:
-      "Incident details for title Medical Emergency. This incident was reported due to unusual activity in the area.",
-    latitude: 45.465396,
-    longitude: -122.586709,
-    timestamp: "2024-11-23T18:29:45.527249",
-    severity: "high",
-    reportedBy: "User700",
-  },
-  {
-    id: 6,
-    type: "hazard",
-    title: "Gas Leak",
-    description:
-      "Incident details for title Gas Leak. This incident was reported due to unusual activity in the area.",
-    latitude: 45.467512,
-    longitude: -122.570941,
-    timestamp: "2024-11-23T18:29:45.527533",
-    severity: "low",
-    reportedBy: "User617",
-  },
-  {
-    id: 7,
-    type: "emergency",
-    title: "Medical Emergency",
-    description:
-      "Incident details for title Medical Emergency. This incident was reported due to unusual activity in the area.",
-    latitude: 45.470536,
-    longitude: -122.575725,
-    timestamp: "2024-11-23T18:29:45.527542",
-    severity: "low",
-    reportedBy: "User730",
-  },
-  {
-    id: 8,
-    type: "emergency",
-    title: "Gas Leak",
-    description:
-      "Incident details for title Gas Leak. This incident was reported due to unusual activity in the area.",
-    latitude: 45.464092,
-    longitude: -122.583514,
-    timestamp: "2024-11-23T18:29:45.527550",
-    severity: "low",
-    reportedBy: "User880",
-  },
-  {
-    id: 9,
-    type: "emergency",
-    title: "Flood Warning",
-    description:
-      "Incident details for title Flood Warning. This incident was reported due to unusual activity in the area.",
-    latitude: 45.470267,
-    longitude: -122.58802,
-    timestamp: "2024-11-23T18:29:45.527558",
-    severity: "medium",
-    reportedBy: "User935",
-  },
-  {
-    id: 10,
-    type: "crime",
-    title: "Suspicious Vehicle",
-    description:
-      "Incident details for title Suspicious Vehicle. This incident was reported due to unusual activity in the area.",
-    latitude: 45.470819,
-    longitude: -122.584104,
-    timestamp: "2024-11-23T18:29:45.527567",
-    severity: "medium",
-    reportedBy: "User512",
-  },
-  // More entries continue in similar format...
-];
+};
 
 export default function Platform() {
-  const { user, isLoggedIn } = useUser();
+  const { isLoggedIn } = useUser();
+  const queryClient = useQueryClient();
   const mapRef = useRef<MapRef>(null);
   const [reportDialogKey, setReportDialogKey] = useState(0);
   const [popupInfo, setPopupInfo] = useState<PopupInfo>(null);
   const [filter, setFilter] = useState<IncidentFilter>("all");
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
-  const [incidents, setIncidents] = useState<Incident[]>(MOCK_INCIDENTS);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(
     null
   );
@@ -194,6 +131,25 @@ export default function Platform() {
     longitude: number;
     latitude: number;
   } | null>(null);
+  const [customMarkers, setCustomMarkers] = useState<CustomMarker[]>([]);
+
+  // Load custom markers from localStorage on mount
+  useEffect(() => {
+    const savedMarkers = localStorage.getItem(STORAGE_KEY);
+    if (savedMarkers) {
+      setCustomMarkers(JSON.parse(savedMarkers));
+    }
+  }, []);
+
+  // Save custom markers to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(customMarkers));
+  }, [customMarkers]);
+
+  const { data: incidents, isLoading } = useQuery({
+    queryKey: ["incidents"],
+    queryFn: api.getIncidents,
+  });
 
   const onMapLoad = useCallback(() => {
     const button = document.querySelector(".mapboxgl-ctrl-icon");
@@ -201,8 +157,6 @@ export default function Platform() {
       (button as HTMLElement).click();
     }
   }, []);
-
-  console.log(user, isLoggedIn);
 
   const getCurrentMapCenter = useCallback(() => {
     if (!mapRef.current) return null;
@@ -232,7 +186,6 @@ export default function Platform() {
 
   const handleContextMenu = (event: mapboxgl.MapLayerMouseEvent) => {
     event.preventDefault();
-
     setContextMenu({
       longitude: event.lngLat.lng,
       latitude: event.lngLat.lat,
@@ -243,6 +196,7 @@ export default function Platform() {
 
   const handleReport = (location: { longitude: number; latitude: number }) => {
     if (!isLoggedIn) {
+      toast.error("You must be logged in to report an incident");
       return;
     }
     setSelectedLocation(location);
@@ -263,6 +217,25 @@ export default function Platform() {
     }
   };
 
+  const handleMarkLocation = () => {
+    if (!contextMenu) return;
+
+    const newMarker: CustomMarker = {
+      id: crypto.randomUUID(),
+      longitude: contextMenu.longitude,
+      latitude: contextMenu.latitude,
+    };
+
+    setCustomMarkers((prev) => [...prev, newMarker]);
+    setContextMenu(null);
+    toast.success("Location marked successfully");
+  };
+
+  const handleRemoveMarker = (markerId: string) => {
+    setCustomMarkers((prev) => prev.filter((marker) => marker.id !== markerId));
+    toast.success("Marker removed successfully");
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     window.location.reload();
@@ -271,10 +244,10 @@ export default function Platform() {
   const pins = useMemo(
     () =>
       incidents
-        .filter((incident) => filter === "all" || incident.type === filter)
+        ?.filter((incident) => filter === "all" || incident.type === filter)
         .map((incident) => (
           <Marker
-            key={`marker-${incident.id}`}
+            key={`marker-${incident._id}`}
             longitude={incident.longitude}
             latitude={incident.latitude}
             anchor="bottom"
@@ -295,6 +268,34 @@ export default function Platform() {
           </Marker>
         )),
     [incidents, filter]
+  );
+
+  const customMarkerElements = useMemo(
+    () =>
+      customMarkers.map((marker) => (
+        <Marker
+          key={marker.id}
+          longitude={marker.longitude}
+          latitude={marker.latitude}
+          anchor="bottom"
+        >
+          <div className="relative group">
+            <Flag className="w-6 h-6 text-primary" />
+            <Button
+              variant="destructive"
+              size="icon"
+              className="absolute -top-2 -right-2 h-4 w-4 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveMarker(marker.id);
+              }}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        </Marker>
+      )),
+    [customMarkers]
   );
 
   return (
@@ -331,6 +332,7 @@ export default function Platform() {
             longitude={contextMenu.x}
             latitude={contextMenu.y}
             onClose={() => setContextMenu(null)}
+            onMarkLocation={handleMarkLocation}
             onReport={() =>
               handleReport({
                 longitude: contextMenu.longitude,
@@ -351,6 +353,7 @@ export default function Platform() {
         )}
 
         {pins}
+        {customMarkerElements}
 
         {popupInfo && (
           <IncidentPopup
@@ -359,6 +362,7 @@ export default function Platform() {
           />
         )}
       </Map>
+
       <div className="absolute top-4 right-4 flex gap-2">
         {!isLoggedIn && (
           <>
@@ -384,18 +388,11 @@ export default function Platform() {
                     Report Incident
                   </Button>
                 }
-                onSubmit={(values) => {
-                  const newIncident = {
-                    id: incidents.length + 1,
-                    ...values,
-                    timestamp: new Date().toISOString(),
-                    reportedBy: "CurrentUser",
-                    latitude: values.location.latitude,
-                    longitude: values.location.longitude,
-                  };
-                  setIncidents([...incidents, newIncident]);
+                onSubmitSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ["incidents"] });
                   setSelectedLocation(null);
                   setIsSelectingLocation(false);
+                  setShowReportDialog(false);
                 }}
                 initialLocation={selectedLocation}
                 mapCenter={getCurrentMapCenter()}
@@ -414,8 +411,12 @@ export default function Platform() {
         )}
       </div>
       <FilterControls filter={filter} onFilterChange={setFilter} />
+      {isLoading && <div>Loading...</div>}
+      {!isLoading && incidents && incidents.length === 0 && (
+        <div>No incidents found</div>
+      )}
       <RecentIncidentsCard
-        incidents={incidents}
+        incidents={incidents ?? []}
         onSelectIncident={handleSelectIncident}
       />
     </>
@@ -427,6 +428,7 @@ function MapContextMenu({
   latitude,
   onClose,
   onReport,
+  onMarkLocation,
 }: MapContextMenuProps) {
   return (
     <div
@@ -451,11 +453,21 @@ function MapContextMenu({
             <AlertCircle className="h-4 w-4" />
             Report Incident
           </DropdownMenuItem>
-          <DropdownMenuItem className="gap-2 cursor-pointer">
+          <DropdownMenuItem
+            className="gap-2 cursor-pointer"
+            onClick={() => {
+              toast.error(
+                "This feature is not yet implemented, hackathons are hard"
+              );
+            }}
+          >
             <Navigation className="h-4 w-4" />
             Get Directions
           </DropdownMenuItem>
-          <DropdownMenuItem className="gap-2 cursor-pointer">
+          <DropdownMenuItem
+            className="gap-2 cursor-pointer"
+            onClick={onMarkLocation}
+          >
             <Flag className="h-4 w-4" />
             Mark Location
           </DropdownMenuItem>
