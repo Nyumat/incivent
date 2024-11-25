@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { BASE_URL } from "@/lib/utils";
+import { Incident } from "@/platform";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -82,7 +84,7 @@ export function ReportIncidentDialog({
     mutationFn: async (data: ReportFormValues) => {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "/api/incidents",
+        `${BASE_URL}/api/incidents`,
         {
           ...data,
           latitude: data.location.latitude,
@@ -97,7 +99,7 @@ export function ReportIncidentDialog({
       );
       return response.data;
     },
-    onSuccess: (newIncident) => {
+    onSuccess: (newIncident: Incident) => {
       sendNotification(newIncident);
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
       onSubmitSuccess?.();

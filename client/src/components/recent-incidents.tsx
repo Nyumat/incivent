@@ -1,14 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,15 +9,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { useUser } from "@/hooks/use-user";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { cn } from "@/lib/utils";
-import { Incident } from "@/platform";
+import { api, Incident } from "@/platform";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Bell, ChevronUp, Clock, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useUser } from "@/hooks/use-user";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/platform";
 import { toast } from "sonner";
-import { useWebSocket } from "@/hooks/use-websocket";
 
 interface RecentIncidentsProps {
   incidents: Incident[];
@@ -42,7 +41,7 @@ function DeleteIncidentButton({ incident }: { incident: Incident }) {
   const { mutate: deleteIncident, isPending: isDeleting } = useMutation({
     mutationFn: () => api.deleteIncident(incident._id),
     onSuccess: () => {
-      sendDeletion(incident._id);
+      sendDeletion(incident._id, incident.title);
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
       toast.success("Incident deleted successfully");
     },
@@ -95,7 +94,7 @@ export function RecentIncidentsCard({
   incidents,
   onSelectIncident,
 }: RecentIncidentsProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const { user } = useUser();
 
   return (

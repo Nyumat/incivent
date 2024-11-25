@@ -20,11 +20,13 @@ import Map, {
 } from "react-map-gl";
 import { toast } from "sonner";
 import { LoginDialog, SignupDialog } from "./components/auth";
+import { CommunityFeed } from "./components/chat";
 import { FilterControls, IncidentFilter } from "./components/incident-filter";
 import { IncidentPopup } from "./components/incident-popup";
 import { RecentIncidentsCard } from "./components/recent-incidents";
 import { ReportIncidentDialog } from "./components/report-incident";
 import { useUser } from "./hooks/use-user";
+import { BASE_URL } from "./lib/utils";
 
 interface ClickLocation {
   longitude: number;
@@ -80,7 +82,7 @@ const STORAGE_KEY = "custom_markers";
 // eslint-disable-next-line react-refresh/only-export-components
 export const api = {
   getIncidents: async (): Promise<Incident[]> => {
-    const { data } = await axios.get("/api/incidents", {
+        const { data } = await axios.get(`${BASE_URL}/api/incidents`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
@@ -90,7 +92,7 @@ export const api = {
   createIncident: async (
     incidentData: Omit<Incident, "_id" | "reportedBy">
   ) => {
-    const { data } = await axios.post("/api/incidents", incidentData, {
+    const { data } = await axios.post(`${BASE_URL}/api/incidents`, incidentData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
@@ -98,7 +100,7 @@ export const api = {
     return data;
   },
   updateIncident: async (id: string, updates: Partial<Incident>) => {
-    const { data } = await axios.patch(`/api/incidents/${id}`, updates, {
+    const { data } = await axios.patch(`${BASE_URL}/api/incidents/${id}`, updates, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
@@ -106,7 +108,7 @@ export const api = {
     return data;
   },
   deleteIncident: async (id: string) => {
-    const { data } = await axios.delete(`/api/incidents/${id}`, {
+    const { data } = await axios.delete(`${BASE_URL}/api/incidents/${id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
@@ -410,6 +412,7 @@ export default function Platform() {
         )}
       </div>
       <FilterControls filter={filter} onFilterChange={setFilter} />
+      <CommunityFeed />
       {isLoading && <div>Loading...</div>}
       {!isLoading && incidents && incidents.length === 0 && (
         <div>No incidents found</div>

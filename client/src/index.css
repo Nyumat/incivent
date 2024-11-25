@@ -141,3 +141,11 @@ html {
 .mapboxgl-popup-content {
   @apply bg-card text-card-foreground;
 }
+
+.mapboxgl-ctrl-scale {
+  @apply hidden;
+}
+
+.mapboxgl-ctrl-fullscreen {
+  @apply hidden !important;
+}
