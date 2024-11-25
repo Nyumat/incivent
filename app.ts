@@ -3,6 +3,7 @@ import incidentRoutes from "@/routes/incident";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import { loggerMiddleware } from "@/middleware/logger";
 
 dotenv.config();
 
@@ -14,6 +15,8 @@ app.use(
     origin: "https://dont-commit-crimes.vercel.app",
   })
 );
+
+app.use(loggerMiddleware);
 
 app.get("/api/health", (req, res) => {
   res.send("OK");
