@@ -63,6 +63,14 @@ export function LandingPage() {
                   GitHub
                 </NavigationMenuLink>
               </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink
+                  href="https://devpost.com/software/dwitch"
+                  className="px-4 py-2"
+                >
+                  Devpost
+                </NavigationMenuLink>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>
@@ -80,16 +88,16 @@ export function LandingPage() {
                 Alert Your Community. <br />
               </BlurFade>
               <BlurFade delay={1} inView duration={0.6}>
-                Save Lives. <br />
+                Stay Informed. <br />
               </BlurFade>
               <BlurFade delay={2} inView duration={1}>
-                Incivent.
+                Make a Difference.
               </BlurFade>
             </h1>
 
             <BlurFade delay={3} inView duration={0.5}>
               <p className="text-xl text-muted-foreground">
-                A real-time incident tracking application to keep your
+                Welcome to the real-time incident tracking application to keep your
                 neighborhood informed and safe, at any time and from anywhere.
               </p>
             </BlurFade>
@@ -136,7 +144,7 @@ export function LandingPage() {
           >
             What Incivent Does
           </motion.h2>
-          <div className="grid grid-cols-4 grid-rows-3 gap-4 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 grid-rows-3 gap-4 md:max-w-7xl mx-auto">
             <motion.div variants={item} className="col-span-2 row-span-3">
               <Card className="h-full w-full">
                 <CardContent className="pt-6">
@@ -203,55 +211,7 @@ export function LandingPage() {
           </div>
         </motion.div>
       </section>
-      <section id="how-it-works" className="py-28 mb-24">
-        <motion.div
-          initial="hidden"
-          whileInView="show"
-          variants={container}
-          viewport={{ once: true }}
-          className="container mx-auto px-4"
-        >
-          <motion.h2
-            variants={item}
-            className="text-4xl tracking-tighter font-bold text-center my-12"
-          >
-            How It Works
-          </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center pt-12">
-            <motion.div variants={item} className="space-y-8">
-              {[
-                "Open the app and explore live incidents on a real-time map.",
-                "Filter incidents by type to focus on what matters most to you.",
-                "Access detailed information for each report, including updates and community insights.",
-                "Enable notifications to stay informed wherever you are.",
-              ].map((step, index) => (
-                <div key={index} className="flex gap-4 items-start">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-background">
-                    {index + 1}
-                  </div>
-                  <p className="text-muted-foreground text-xl">{step}</p>
-                </div>
-              ))}
-            </motion.div>
-            <motion.div variants={item}>
-              <AspectRatio
-                ratio={16 / 9}
-                className="bg-muted rounded-lg overflow-hidden"
-              >
-                <div className="relative">
-                  <HeroVideoDialog
-                    className="block"
-                    animationStyle="from-center"
-                    videoSrc="/demo.mov"
-                    thumbnailSrc="/main.png"
-                    thumbnailAlt="Incivent Demo"
-                  />
-                </div>
-              </AspectRatio>
-            </motion.div>
-          </div>
-        </motion.div>
-      </section>
+      <HowItWorksSection />
       <section id="get-started">
         <motion.div
           initial="hidden"
@@ -261,7 +221,7 @@ export function LandingPage() {
           className="container mx-auto px-4 text-center"
         >
           <div className="relative flex h-[800px] w-full flex-col items-center justify-center  rounded-lg bg-background space-y-4">
-            <h2 className="z-10 whitespace-pre-wrap text-center text-5xl font-medium tracking-tighter text-white">
+            <h2 className="z-10 whitespace-pre-wrap text-center text-5xl font-medium tracking-tighter dark:text-white">
               <span className="translate-y-12">Get Started Today</span>
               <Ripple />
             </h2>
@@ -311,7 +271,7 @@ export function LandingPage() {
                 GitHub
               </a>
               <a
-                href="https://devpost.com/software/incivent"
+                href="https://devpost.com/software/dwitch"
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
                 DevPost
@@ -321,5 +281,156 @@ export function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function HowItWorksSection() {
+  return (
+    <section id="how-it-works" className="py-28 mb-24">
+      <motion.div
+        initial="hidden"
+        whileInView="show"
+        variants={container}
+        viewport={{ once: true }}
+        className="container mx-auto px-4"
+      >
+        <motion.h2
+          variants={item}
+          className="text-4xl tracking-tighter font-bold text-center mb-16"
+        >
+          How It Works
+        </motion.h2>
+        <motion.div
+          variants={item}
+          className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-24"
+        >
+          <div className="space-y-4">
+            <h3 className="text-2xl font-semibold tracking-tight">
+              Explore & Report Incidents
+            </h3>
+            <div className="space-y-8">
+              <div className="flex gap-4 items-start">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-background">
+                  1
+                </div>
+                <p className="text-muted-foreground text-xl">
+                  Open the app and explore live incidents on a real-time map
+                </p>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-background">
+                  2
+                </div>
+                <p className="text-muted-foreground text-xl">
+                  Filter incidents by type to focus on what matters most to you
+                </p>
+              </div>
+            </div>
+          </div>
+          <AspectRatio
+            ratio={16 / 9}
+            className="bg-muted rounded-lg overflow-hidden"
+          >
+            <div className="relative">
+              <HeroVideoDialog
+                className="block"
+                animationStyle="from-center"
+                videoSrc="/demo.mov"
+                thumbnailSrc="/main.png"
+                thumbnailAlt="Incivent Main Demo"
+              />
+            </div>
+          </AspectRatio>
+        </motion.div>
+        <motion.div
+          variants={item}
+          className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-24"
+        >
+          <AspectRatio
+            ratio={16/8}
+            className="bg-muted rounded-lg overflow-hidden md:order-2"
+          >
+            <div className="relative">
+              <HeroVideoDialog
+                className="block"
+                animationStyle="from-center"
+                videoSrc="/real-time-demo.mov"
+                thumbnailSrc="/real-time.png"
+                thumbnailAlt="Real-time Incident Updates Demo"
+              />
+            </div>
+          </AspectRatio>
+          <div className="space-y-4 md:order-1">
+            <h3 className="text-2xl font-semibold tracking-tight">
+              Real-time Incident Updates
+            </h3>
+            <div className="space-y-8">
+              <div className="flex gap-4 items-start">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-background">
+                  3
+                </div>
+                <p className="text-muted-foreground text-xl">
+                  Receive instant notifications when new incidents are reported
+                  in your area
+                </p>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-background">
+                  4
+                </div>
+                <p className="text-muted-foreground text-xl">
+                  Stay synchronized with other users as incidents are reported
+                  and updated
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+        <motion.div
+          variants={item}
+          className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
+        >
+          <div className="space-y-4">
+            <h3 className="text-2xl font-semibold tracking-tight">
+              Interactive Map Features
+            </h3>
+            <div className="space-y-8">
+              <div className="flex gap-4 items-start">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-background">
+                  5
+                </div>
+                <p className="text-muted-foreground text-xl">
+                  Click any incident to fly to its location and view detailed
+                  information
+                </p>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-background">
+                  6
+                </div>
+                <p className="text-muted-foreground text-xl">
+                  Incident creators can remove reports, with changes reflected
+                  instantly for all users
+                </p>
+              </div>
+            </div>
+          </div>
+          <AspectRatio
+            ratio={16 / 9}
+            className="bg-muted rounded-lg overflow-hidden"
+          >
+            <div className="relative">
+              <HeroVideoDialog
+                className="block"
+                animationStyle="from-center"
+                videoSrc="/flyto-delete-demo.mov"
+                thumbnailSrc="/fly-to.png"
+                thumbnailAlt="Interactive Map Features Demo"
+              />
+            </div>
+          </AspectRatio>
+        </motion.div>
+      </motion.div>
+    </section>
   );
 }
