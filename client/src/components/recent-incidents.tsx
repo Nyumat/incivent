@@ -154,7 +154,8 @@ export function RecentIncidentsCard({
                               : "secondary"
                           }
                         >
-                          {incident.type}
+                          {incident.type.charAt(0).toUpperCase() +
+                            incident.type.slice(1)}
                         </Badge>
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="h-3 w-3" />

@@ -24,8 +24,7 @@ router.post(
 
 router.get(
   "/incidents",
-  authMiddleware,
-  async (req: Request, res: Response) => {
+  async (_: Request, res: Response) => {
     try {
       const incidents = await IncidentModel.find().populate("reportedBy");
       return res.status(200).send(incidents);

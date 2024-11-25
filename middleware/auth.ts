@@ -8,6 +8,7 @@ export const authMiddleware = (
 ): void => {
   const authHeader = req.headers.authorization;
 
+    // and if its not GET /incidents
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     res.status(401).json({ error: "Authorization token missing or invalid." });
     return;

@@ -1,16 +1,23 @@
-import "tsconfig-paths/register";
 import app from "@/app";
 import { connectDatabase } from "@/database";
 import { config } from "dotenv";
-import WebSocket from "ws";
 import http from "http";
+import "tsconfig-paths/register";
+import WebSocket from "ws";
 
 config({ path: ".env.local" });
 
 const PORT = process.env.PORT || "3000";
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017";
+const MONGO_URI =
+  process.env.NODE_ENV === "production"
+    ? process.env.MONGO_URI
+    : process.env.LOCAL_MONGO_URI;
 
 const startServer = async (): Promise<void> => {
+  if (!MONGO_URI) {
+    throw new Error("MONGO_URI is not defined");
+  }
+
   await connectDatabase(MONGO_URI);
 
   const server = http.createServer(app);
@@ -79,7 +86,7 @@ const startServer = async (): Promise<void> => {
     await startServer();
 
     process.on("SIGINT", () => {
-      console.log("Stopping server...");
+      console.log("\nStopping server...");
       process.exit();
     });
   } catch (error) {

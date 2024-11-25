@@ -18,6 +18,7 @@ import Map, {
   NavigationControl,
   ScaleControl,
 } from "react-map-gl";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { LoginDialog, SignupDialog } from "./components/auth";
 import { CommunityFeed } from "./components/chat";
@@ -75,6 +76,8 @@ export interface IUser {
 
 export type InciventUser = Omit<IUser, "__v" | "password">;
 
+export type IncidentFlag = "public" | "private";
+
 export type PopupInfo = Incident | null;
 
 const STORAGE_KEY = "custom_markers";
@@ -82,7 +85,7 @@ const STORAGE_KEY = "custom_markers";
 // eslint-disable-next-line react-refresh/only-export-components
 export const api = {
   getIncidents: async (): Promise<Incident[]> => {
-        const { data } = await axios.get(`${BASE_URL}/api/incidents`, {
+    const { data } = await axios.get(`${BASE_URL}/api/incidents`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
@@ -92,19 +95,27 @@ export const api = {
   createIncident: async (
     incidentData: Omit<Incident, "_id" | "reportedBy">
   ) => {
-    const { data } = await axios.post(`${BASE_URL}/api/incidents`, incidentData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const { data } = await axios.post(
+      `${BASE_URL}/api/incidents`,
+      incidentData,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
     return data;
   },
   updateIncident: async (id: string, updates: Partial<Incident>) => {
-    const { data } = await axios.patch(`${BASE_URL}/api/incidents/${id}`, updates, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const { data } = await axios.patch(
+      `${BASE_URL}/api/incidents/${id}`,
+      updates,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
     return data;
   },
   deleteIncident: async (id: string) => {
@@ -119,6 +130,7 @@ export const api = {
 
 export default function Platform() {
   const { isLoggedIn } = useUser();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const mapRef = useRef<MapRef>(null);
   const [reportDialogKey, setReportDialogKey] = useState(0);
@@ -239,7 +251,8 @@ export default function Platform() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    window.location.reload();
+    queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    navigate("/");
   };
 
   const pins = useMemo(
