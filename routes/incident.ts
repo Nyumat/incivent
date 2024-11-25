@@ -12,7 +12,10 @@ router.post(
     try {
       const incident = new IncidentModel({ ...req.body, reportedBy });
       await incident.save();
-      res.status(201).send(incident);
+      const incidentWithUser = await IncidentModel.findById(
+        incident._id
+      ).populate("reportedBy");
+      res.status(201).send(incidentWithUser);
     } catch (error) {
       res.status(400).send(error);
     }

@@ -63,7 +63,7 @@ router.post("/login", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    const token = generateToken({ id: user._id, email: user.email });
+    const token = generateToken({ id: user._id, email: user.email, name: user.name, username: user.username });
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
     res.status(500).json({ error: "Server error. Please try again later." });
@@ -77,6 +77,7 @@ router.get("/checkAuth", authMiddleware, (req, res) => {
 
 router.get("/user", authMiddleware, (req, res) => {
   const user = req.auth;
+  console.log(user);
   res.status(200).json(user);
 });
 

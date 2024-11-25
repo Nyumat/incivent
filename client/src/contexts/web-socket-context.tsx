@@ -1,3 +1,5 @@
+import { IncidentToast } from "@/components/incident-toast";
+import { IChatMessage, wsUrl } from "@/lib/utils";
 import type { Incident } from "@/platform";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { createContext, useEffect, useRef } from "react";
@@ -5,7 +7,8 @@ import { toast } from "sonner";
 
 interface WebSocketContextType {
   sendNotification: (incident: Incident) => void;
-  sendDeletion: (incidentId: string) => void;
+  sendDeletion: (incidentId: string, title: string) => void;
+  sendChatMessage: (message: Omit<IChatMessage, "_id">) => void;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -13,13 +16,28 @@ export const WebSocketContext = createContext<WebSocketContextType | null>(
   null
 );
 
+type WebSocketMessage =
+  | {
+      type: "NEW_INCIDENT";
+      incident: Incident;
+    }
+  | {
+      type: "DELETE_INCIDENT";
+      incidentId: string;
+      title: string;
+    }
+  | {
+      type: "CHAT_MESSAGE";
+      message: IChatMessage;
+    };
+
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const ws = useRef<WebSocket | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const connectWebSocket = () => {
-      ws.current = new WebSocket(`ws://localhost:3001`);
+      ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
         console.log("WebSocket Connected");
@@ -27,48 +45,63 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
       ws.current.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse(event.data) as WebSocketMessage;
           console.log("Received WebSocket message:", data);
 
-          if (data.type === "NEW_INCIDENT" && data.incident) {
-            queryClient.invalidateQueries({ queryKey: ["incidents"] });
-            toast.info(
-              <div className="flex flex-col gap-1">
-                <div className="font-semibold">{data.incident.title}</div>
-                <div className="text-sm opacity-90">
-                  New {data.incident.type} reported nearby
-                </div>
-              </div>,
-              {
+          switch (data.type) {
+            case "NEW_INCIDENT":
+              queryClient.invalidateQueries({ queryKey: ["incidents"] });
+              toast.info(<IncidentToast incident={data.incident} />, {
                 duration: 5000,
-                action: {
-                  label: "View",
-                  onClick: () => {
-                    window.dispatchEvent(
-                      new CustomEvent("new-incident", {
-                        detail: data.incident,
-                      })
-                    );
+              });
+              break;
+
+            case "DELETE_INCIDENT":
+              queryClient.invalidateQueries({ queryKey: ["incidents"] });
+              toast.info(
+                <div className="flex flex-col gap-1">
+                  <div className="font-semibold">Incident Removed</div>
+                  <div className="text-sm opacity-90">
+                    Incident '{data.title}' has been removed by its creator.
+                  </div>
+                </div>,
+                { duration: 3000 }
+              );
+              window.dispatchEvent(
+                new CustomEvent("incident-deleted", {
+                  detail: { id: data.incidentId },
+                })
+              );
+              break;
+
+            case "CHAT_MESSAGE":
+              window.dispatchEvent(
+                new CustomEvent("new-chat-message", {
+                  detail: data.message,
+                })
+              );
+              toast.info(
+                <div className="flex flex-col gap-1">
+                  <div className="font-semibold">New Message in Chat</div>
+                  <div className="text-sm opacity-90 line-clamp-2 truncate">
+                    From {data.message.username}: {data.message.content}
+                  </div>
+                </div>,
+                {
+                  duration: 3000,
+                  action: {
+                    label: "View",
+                    onClick: () => {
+                      window.dispatchEvent(
+                        new CustomEvent("open-chat", {
+                          detail: { messageId: data.message._id },
+                        })
+                      );
+                    },
                   },
-                },
-              }
-            );
-          } else if (data.type === "DELETE_INCIDENT" && data.incidentId) {
-            queryClient.invalidateQueries({ queryKey: ["incidents"] });
-            toast.info(
-              <div className="flex flex-col gap-1">
-                <div className="font-semibold">Incident Removed</div>
-                <div className="text-sm opacity-90">
-                  An incident has been deleted by its creator
-                </div>
-              </div>,
-              { duration: 3000 }
-            );
-            window.dispatchEvent(
-              new CustomEvent("incident-deleted", {
-                detail: { id: data.incidentId },
-              })
-            );
+                }
+              );
+              break;
           }
         } catch (error) {
           console.error("Failed to parse WebSocket message:", error);
@@ -92,30 +125,40 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, [queryClient]);
 
-  const sendNotification = (incident: Incident) => {
+  const sendWebSocketMessage = (message: WebSocketMessage) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(
-        JSON.stringify({
-          type: "NEW_INCIDENT",
-          incident,
-        })
-      );
+      ws.current.send(JSON.stringify(message));
+    } else {
+      console.warn("WebSocket is not connected. Message not sent:", message);
     }
   };
 
-  const sendDeletion = (incidentId: string) => {
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(
-        JSON.stringify({
-          type: "DELETE_INCIDENT",
-          incidentId,
-        })
-      );
-    }
+  const sendNotification = (incident: Incident) => {
+    sendWebSocketMessage({
+      type: "NEW_INCIDENT",
+      incident,
+    });
+  };
+
+  const sendDeletion = (incidentId: string, title: string) => {
+    sendWebSocketMessage({
+      type: "DELETE_INCIDENT",
+      incidentId,
+      title,
+    });
+  };
+
+  const sendChatMessage = (message: Omit<IChatMessage, "_id">) => {
+    sendWebSocketMessage({
+      type: "CHAT_MESSAGE",
+      message: message as IChatMessage,
+    });
   };
 
   return (
-    <WebSocketContext.Provider value={{ sendNotification, sendDeletion }}>
+    <WebSocketContext.Provider
+      value={{ sendNotification, sendDeletion, sendChatMessage }}
+    >
       {children}
     </WebSocketContext.Provider>
   );

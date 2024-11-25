@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { BASE_URL } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LogIn, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -193,7 +194,7 @@ export function SignupDialog() {
 
   async function onSubmit(data: SignupFormValues) {
     try {
-      const response = await fetch("/api/auth/signup", {
+      const response = await fetch(`${BASE_URL}/api/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

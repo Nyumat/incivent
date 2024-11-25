@@ -1,6 +1,5 @@
 import { WebSocketProvider } from "@/contexts/web-socket-context.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
@@ -28,10 +27,9 @@ export function renderToDom(container: HTMLElement) {
         <WebSocketProvider>
           <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
             <Application />
-            <Toaster />
+            <Toaster richColors />
           </ThemeProvider>
         </WebSocketProvider>
-        <ReactQueryDevtools />
       </QueryClientProvider>
     </BrowserRouter>
   );

@@ -107,7 +107,7 @@ export function IncidentPopup({ incident, onClose }: IncidentPopupProps) {
   const { mutate: deleteIncident, isPending: isDeleting } = useMutation({
     mutationFn: () => api.deleteIncident(incident._id),
     onSuccess: () => {
-      sendDeletion(incident._id);
+      sendDeletion(incident._id, incident.title);
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
       toast.success("Incident deleted successfully");
       onClose();

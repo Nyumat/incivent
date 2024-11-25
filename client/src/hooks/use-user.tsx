@@ -1,3 +1,4 @@
+import { BASE_URL } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -17,7 +18,7 @@ export const useUser = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch("/api/auth/user", {
+        const response = await fetch(`${BASE_URL}/api/auth/user`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -27,7 +28,6 @@ export const useUser = () => {
 
         if (response.ok) {
           const userData: User = await response.json();
-          console.log(userData);
           setUser(userData);
           setIsLoggedIn(true);
         } else {
