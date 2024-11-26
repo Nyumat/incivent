@@ -7,7 +7,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { AlertCircle, Flag, Navigation, Plus, X } from "lucide-react";
+import {
+  AlertCircle,
+  Copy,
+  Flag,
+  Navigation,
+  Plus,
+  Share2,
+  SquarePen,
+  Trash,
+  X,
+} from "lucide-react";
 import mapboxgl from "mapbox-gl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MapRef } from "react-map-gl";
@@ -25,7 +35,8 @@ import { CommunityFeed } from "./components/chat";
 import { FilterControls, IncidentFilter } from "./components/incident-filter";
 import { IncidentPopup } from "./components/incident-popup";
 import { RecentIncidentsCard } from "./components/recent-incidents";
-import { ReportIncidentDialog } from "./components/report-incident";
+import { EnhancedReportIncidentDialog } from "./components/report-dialog";
+import { SpeedDial } from "./components/speed-dial";
 import { useUser } from "./hooks/use-user";
 import { BASE_URL } from "./lib/utils";
 
@@ -171,15 +182,6 @@ export default function Platform() {
     }
   }, []);
 
-  const getCurrentMapCenter = useCallback(() => {
-    if (!mapRef.current) return null;
-    const center = mapRef.current.getCenter();
-    return {
-      latitude: center.lat,
-      longitude: center.lng,
-    };
-  }, []);
-
   const handleMapClick = useCallback(
     (event: mapboxgl.MapLayerMouseEvent) => {
       if (isSelectingLocation) {
@@ -197,6 +199,19 @@ export default function Platform() {
     [isSelectingLocation]
   );
 
+  const handleReport = (location: { longitude: number; latitude: number }) => {
+    if (!isLoggedIn) {
+      toast.error("You must be logged in to report an incident");
+      return;
+    }
+    setSelectedLocation({
+      latitude: location.latitude,
+      longitude: location.longitude,
+    });
+    setShowReportDialog(true);
+    setContextMenu(null);
+  };
+
   const handleContextMenu = (event: mapboxgl.MapLayerMouseEvent) => {
     event.preventDefault();
     setContextMenu({
@@ -207,14 +222,29 @@ export default function Platform() {
     });
   };
 
-  const handleReport = (location: { longitude: number; latitude: number }) => {
-    if (!isLoggedIn) {
-      toast.error("You must be logged in to report an incident");
-      return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleReportSuccess = async (values: any) => {
+    try {
+      const incidentData = {
+        type: values.type,
+        title: values.title,
+        description: values.description,
+        severity: values.severity,
+        latitude: values.location.latitude,
+        longitude: values.location.longitude,
+        timestamp: new Date().toISOString(),
+      };
+
+      await api.createIncident(incidentData);
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      setSelectedLocation(null);
+      setIsSelectingLocation(false);
+      setShowReportDialog(false);
+      toast.success("Incident reported successfully");
+    } catch (error) {
+      console.error("Error creating incident:", error);
+      toast.error("Failed to report incident");
     }
-    setSelectedLocation(location);
-    setShowReportDialog(true);
-    setContextMenu(null);
   };
 
   const handleSelectIncident = (incident: Incident) => {
@@ -335,6 +365,37 @@ export default function Platform() {
         <NavigationControl position="top-left" />
         <ScaleControl />
 
+        <div className="hidden md:block absolute top-20 right-4">
+          <SpeedDial
+            actionButtons={[
+              {
+                action: () => {},
+                icon: <Copy />,
+
+                label: "Copy",
+              },
+              {
+                action: () => {},
+                icon: <SquarePen />,
+
+                label: "Edit",
+              },
+              {
+                action: () => {},
+                icon: <Share2 />,
+
+                label: "Share",
+              },
+              {
+                action: () => {},
+                icon: <Trash />,
+                label: "Delete",
+              },
+            ]}
+            direction="down"
+          />
+        </div>
+
         {isSelectingLocation && (
           <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-background/90 text-foreground px-4 py-2 rounded-full shadow-lg">
             Click on the map to select incident location
@@ -388,13 +449,15 @@ export default function Platform() {
         {isLoggedIn && (
           <div className="absolute top-4 right-4">
             <div className="flex gap-2">
-              <ReportIncidentDialog
+              <EnhancedReportIncidentDialog
                 key={reportDialogKey}
                 trigger={
                   <Button
                     variant="destructive"
+                    className="gap-2"
                     onClick={() => {
                       setShowReportDialog(true);
+                      setSelectedLocation(null);
                       setReportDialogKey((prev) => prev + 1);
                     }}
                   >
@@ -402,18 +465,19 @@ export default function Platform() {
                     Report Incident
                   </Button>
                 }
-                onSubmitSuccess={() => {
-                  queryClient.invalidateQueries({ queryKey: ["incidents"] });
-                  setSelectedLocation(null);
-                  setIsSelectingLocation(false);
-                  setShowReportDialog(false);
-                }}
+                onSubmitSuccess={handleReportSuccess}
                 initialLocation={selectedLocation}
-                mapCenter={getCurrentMapCenter()}
                 open={showReportDialog}
-                onOpenChange={setShowReportDialog}
+                onOpenChange={(open) => {
+                  setShowReportDialog(open);
+                  if (!open) {
+                    setSelectedLocation(null);
+                  }
+                }}
                 onRequestLocationSelect={() => {
                   setIsSelectingLocation(true);
+                  setShowReportDialog(false);
+                  setSelectedLocation(null);
                 }}
               />
 
@@ -425,6 +489,7 @@ export default function Platform() {
         )}
       </div>
       <FilterControls filter={filter} onFilterChange={setFilter} />
+
       <CommunityFeed />
       {isLoading && <div>Loading...</div>}
       {!isLoading && incidents && incidents.length === 0 && (

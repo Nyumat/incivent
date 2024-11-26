@@ -89,6 +89,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                 </div>,
                 {
                   duration: 3000,
+                  position: "top-center",
                   action: {
                     label: "View",
                     onClick: () => {

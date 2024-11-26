@@ -14,10 +14,10 @@ export interface IChatMessage {
   incidentId?: string;
 }
 
-const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 export const wsUrl =
   process.env.NODE_ENV === "production"
     ? `wss://incivent.onrender.com`
-    : `${wsProtocol}//${window.location.host}`;
+    : `ws://localhost:3000`;
 
-export const BASE_URL = process.env.NODE_ENV === "production" ? "https://incivent.onrender.com" : "";
+export const BASE_URL =
+  process.env.NODE_ENV === "production" ? "https://incivent.onrender.com" : "";
