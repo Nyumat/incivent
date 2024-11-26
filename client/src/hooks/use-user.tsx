@@ -1,7 +1,7 @@
 import { BASE_URL } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
-interface User {
+export type User = {
   id: string;
   name: string;
   email: string;

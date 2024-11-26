@@ -27,7 +27,7 @@ export function renderToDom(container: HTMLElement) {
         <WebSocketProvider>
           <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
             <Application />
-            <Toaster richColors />
+            <Toaster richColors closeButton />
           </ThemeProvider>
         </WebSocketProvider>
       </QueryClientProvider>

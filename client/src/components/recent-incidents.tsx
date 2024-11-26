@@ -26,15 +26,17 @@ import { cn } from "@/lib/utils";
 import { api, Incident } from "@/platform";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Bell, ChevronUp, Clock, Trash2 } from "lucide-react";
-import { useState } from "react";
+import React from "react";
 import { toast } from "sonner";
 
 interface RecentIncidentsProps {
   incidents: Incident[];
   onSelectIncident: (incident: Incident) => void;
+  isCollapsed: boolean;
+  setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-function DeleteIncidentButton({ incident }: { incident: Incident }) {
+export function DeleteIncidentButton({ incident }: { incident: Incident }) {
   const queryClient = useQueryClient();
   const { sendDeletion } = useWebSocket();
 
@@ -93,8 +95,9 @@ function DeleteIncidentButton({ incident }: { incident: Incident }) {
 export function RecentIncidentsCard({
   incidents,
   onSelectIncident,
+  isCollapsed,
+  setIsCollapsed,
 }: RecentIncidentsProps) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
   const { user } = useUser();
 
   return (

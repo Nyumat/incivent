@@ -277,7 +277,7 @@ export function LandingPage() {
                 to={isLoggedIn ? "/platform" : "/platform?signup=true"}
                 className="gap-2"
               >
-                {isLoggedIn ? "Start Exploring" : "Get Started"}
+                {isLoggedIn ? "Start Exploring" : "Sign Up Now"}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

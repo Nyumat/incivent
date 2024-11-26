@@ -1,5 +1,5 @@
 import { authMiddleware } from "@/middleware/auth";
-import { User } from "@/models/user";
+import { deleteAccount, User } from "@/models/user";
 import { generateToken } from "@/util/jwt";
 import bcrypt from "bcryptjs";
 import { Request, Response, Router } from "express";
@@ -63,22 +63,53 @@ router.post("/login", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    const token = generateToken({ id: user._id, email: user.email, name: user.name, username: user.username });
+    const token = generateToken({
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      username: user.username,
+    });
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
     res.status(500).json({ error: "Server error. Please try again later." });
   }
 });
 
-router.get("/checkAuth", authMiddleware, (req, res) => {
+router.get("/checkAuth", authMiddleware, (req: Request, res: Response) => {
   const user = req.auth;
   res.status(200).json({ message: "Authorized access", user });
 });
 
-router.get("/user", authMiddleware, (req, res) => {
+router.get("/user", authMiddleware, (req: Request, res: Response) => {
   const user = req.auth;
   console.log(user);
   res.status(200).json(user);
+});
+
+router.delete("/:id", authMiddleware, async (req: Request, res: Response) => {
+  const user = req.auth;
+  const { id } = req.params;
+
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized access" });
+  }
+
+  if (user.id !== id) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  if (!id) {
+    return res.status(401).json({ error: "Unauthorized access" });
+  }
+
+  try {
+    await deleteAccount(id);
+    req.auth = undefined;
+    req.token = undefined;
+    res.status(200).json({ message: "Account deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Server error. Please try again later." });
+  }
 });
 
 export default router;

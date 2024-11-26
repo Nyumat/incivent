@@ -137,7 +137,7 @@ interface ChatMessageProps {
   isOwn: boolean;
 }
 
-function ChatMessage({ message, isOwn }: ChatMessageProps) {
+export function ChatMessage({ message, isOwn }: ChatMessageProps) {
   return (
     <div
       className={cn(
@@ -154,11 +154,12 @@ function ChatMessage({ message, isOwn }: ChatMessageProps) {
         </div>
         <div
           className={cn(
-            "p-2 rounded-lg bg-gray-100 text-sm",
-            isOwn ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"
+            "p-2 rounded-lg  text-sm max-w-56 break-words",
+            // TODO: Allow users to change their chat color 0.o
+            isOwn ? " text-white" : "text-white"
           )}
         >
-          {message.content}
+          {message.content.trim()}
         </div>
       </div>
     </div>

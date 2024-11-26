@@ -15,3 +15,13 @@ const userSchema = new mongoose.Schema<InciventUser>({
 });
 
 export const User = mongoose.model<InciventUser>("User", userSchema);
+
+export async function deleteAccount(userId: string) {
+  const user = await User.findById(userId).exec();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  await User.findByIdAndDelete(userId);
+}

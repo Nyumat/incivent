@@ -30,39 +30,41 @@ import Map, {
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { LoginDialog, SignupDialog } from "./components/auth";
-import { CommunityFeed } from "./components/chat";
 import { FilterControls, IncidentFilter } from "./components/incident-filter";
 import { IncidentPopup } from "./components/incident-popup";
-import { RecentIncidentsCard } from "./components/recent-incidents";
+import { PlatformDock } from "./components/platform-dock";
 import { EnhancedReportIncidentDialog } from "./components/report-dialog";
 import { SpeedDial } from "./components/speed-dial";
+import { Spinner } from "./components/ui/spinner";
 import { useUser } from "./hooks/use-user";
-import { BASE_URL } from "./lib/utils";
+import { useWebSocket } from "./hooks/use-websocket";
+import { BASE_URL, IChatMessage } from "./lib/utils";
 
-interface ClickLocation {
+export type PopupInfo = Incident | null;
+export type SelectedIncident = Incident | null;
+export type IncidentFlag = "public" | "private";
+export type IncidentSeverity = "low" | "medium" | "high";
+export type InciventUser = Omit<IUser, "__v" | "password">;
+export type IncidentType = "crime" | "emergency" | "hazard";
+export type SelectedLocation = { longitude: number; latitude: number } | null;
+export interface ClickLocation {
   longitude: number;
   latitude: number;
   x: number;
   y: number;
 }
-
-interface CustomMarker {
+export interface CustomMarker {
   id: string;
   longitude: number;
   latitude: number;
 }
-
-interface MapContextMenuProps {
+export interface MapContextMenuProps {
   longitude: number;
   latitude: number;
   onClose: () => void;
   onReport: (location: { longitude: number; latitude: number }) => void;
   onMarkLocation: () => void;
 }
-
-export type IncidentType = "crime" | "emergency" | "hazard";
-export type IncidentSeverity = "low" | "medium" | "high";
-
 export interface Incident {
   _id: string;
   type: IncidentType;
@@ -74,7 +76,6 @@ export interface Incident {
   severity: IncidentSeverity;
   reportedBy: InciventUser;
 }
-
 export interface IUser {
   _id: string;
   name: string;
@@ -84,14 +85,7 @@ export interface IUser {
   __v: number;
 }
 
-export type InciventUser = Omit<IUser, "__v" | "password">;
-
-export type IncidentFlag = "public" | "private";
-
-export type PopupInfo = Incident | null;
-
-const STORAGE_KEY = "custom_markers";
-
+export const STORAGE_KEY = "poi-markers";
 // eslint-disable-next-line react-refresh/only-export-components
 export const api = {
   getIncidents: async (): Promise<Incident[]> => {
@@ -139,25 +133,50 @@ export const api = {
 };
 
 export default function Platform() {
-  const { isLoggedIn } = useUser();
+  const { user } = useUser();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { isLoggedIn } = useUser();
   const mapRef = useRef<MapRef>(null);
-  const [reportDialogKey, setReportDialogKey] = useState(0);
+  const queryClient = useQueryClient();
+  const { sendChatMessage } = useWebSocket();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [newMessage, setNewMessage] = useState("");
   const [signUpOpen, setSignUpOpen] = useState(false);
-  const [popupInfo, setPopupInfo] = useState<PopupInfo>(null);
+  const [reportDialogKey, setReportDialogKey] = useState(0);
   const [filter, setFilter] = useState<IncidentFilter>("all");
-  const [isSelectingLocation, setIsSelectingLocation] = useState(false);
-  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(
-    null
-  );
-  const [contextMenu, setContextMenu] = useState<ClickLocation | null>(null);
+  const [popupInfo, setPopupInfo] = useState<PopupInfo>(null);
+  const [messages, setMessages] = useState<IChatMessage[]>([]);
   const [showReportDialog, setShowReportDialog] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    longitude: number;
-    latitude: number;
-  } | null>(null);
+  const [isSelectingLocation, setIsSelectingLocation] = useState(false);
   const [customMarkers, setCustomMarkers] = useState<CustomMarker[]>([]);
+  const [contextMenu, setContextMenu] = useState<ClickLocation | null>(null);
+  const [selectedLocation, setSelectedLocation] =
+    useState<SelectedLocation>(null);
+  const [selectedIncident, setSelectedIncident] =
+    useState<SelectedIncident>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    const handleNewMessage = (event: CustomEvent<IChatMessage>) => {
+      setMessages((prev) => [...prev, event.detail]);
+    };
+
+    window.addEventListener(
+      "new-chat-message",
+      handleNewMessage as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        "new-chat-message",
+        handleNewMessage as EventListener
+      );
+    };
+  }, []);
 
   useEffect(() => {
     const savedMarkers = localStorage.getItem(STORAGE_KEY);
@@ -174,6 +193,55 @@ export default function Platform() {
     queryKey: ["incidents"],
     queryFn: api.getIncidents,
   });
+
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search);
+    if (search.get("signup") === "true") {
+      // TODO: What a crazy hack
+      const button = document.getElementById("speed-dial-trigger");
+      if (button) {
+        button.click();
+      }
+
+      if (!localStorage.getItem("token") && !isLoggedIn) {
+        toast.custom(
+          (t) => (
+            <div className="bg-background border border-primary text-primary text-lg font-medium space-x-2 p-4 rounded-md flex items-center relative">
+              <img
+                src="/icon.png"
+                alt="Incivent Logo"
+                className="w-8 h-8 mr-4 scale-150"
+              />
+              <div className="flex flex-col">
+                <div className="text-lg font-medium leading-relaxed text-foreground">
+                  Welcome to Incivent!
+                </div>
+                <div className="text-md leading-relaxed text-foreground">
+                  Report incidents, chat with others, and stay safe!
+                </div>
+              </div>
+              <button
+                onClick={() => toast.dismiss(t)}
+                className="ml-auto p-2 rounded-full hover:bg-primary/10 transition-colors absolute right-2 top-2"
+              >
+                <X className="w-4 h-4 text-whitee" />
+              </button>
+            </div>
+          ),
+          {
+            duration: 5000,
+          }
+        );
+
+        setSignUpOpen(true);
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+      }
+    }
+  }, [isLoggedIn]);
 
   const onMapLoad = useCallback(() => {
     const button = document.querySelector(".mapboxgl-ctrl-icon");
@@ -199,6 +267,20 @@ export default function Platform() {
     [isSelectingLocation]
   );
 
+  const handleSendMessage = () => {
+    if (!user || !newMessage.trim()) return;
+
+    const message: Omit<IChatMessage, "_id"> = {
+      userId: user.id,
+      username: user.username,
+      content: newMessage.trim(),
+      timestamp: new Date().toISOString(),
+    };
+
+    sendChatMessage(message);
+    setNewMessage("");
+  };
+
   const handleReport = (location: { longitude: number; latitude: number }) => {
     if (!isLoggedIn) {
       toast.error("You must be logged in to report an incident");
@@ -222,8 +304,13 @@ export default function Platform() {
     });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleReportSuccess = async (values: any) => {
+  const handleReportSuccess = async (values: {
+    type: IncidentType;
+    title: string;
+    description: string;
+    severity: IncidentSeverity;
+    location: { latitude: number; longitude: number };
+  }) => {
     try {
       const incidentData = {
         type: values.type,
@@ -284,87 +371,6 @@ export default function Platform() {
     queryClient.invalidateQueries({ queryKey: ["incidents"] });
     navigate("/");
   };
-
-  useEffect(() => {
-    const search = new URLSearchParams(window.location.search);
-    if (search.get("signup") === "true") {
-      const button = document.getElementById("speed-dial-trigger");
-      if (button) {
-        button.click();
-      }
-      toast.message(
-        "Welcome to Incivent! Sign up to continue. Or just look around, that's cool too.",
-        {
-          classNames: {
-            toast:
-              "bg-background border border-primary text-primary text-lg font-medium",
-            title: "text-lg font-medium leading-relaxed text-foreground",
-          },
-          duration: 5000,
-          icon: "🎉",
-        }
-      );
-      setSignUpOpen(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
-
-  const pins = useMemo(
-    () =>
-      incidents
-        ?.filter((incident) => filter === "all" || incident.type === filter)
-        .map((incident) => (
-          <Marker
-            key={`marker-${incident._id}`}
-            longitude={incident.longitude}
-            latitude={incident.latitude}
-            anchor="bottom"
-            onClick={(e) => {
-              e.originalEvent.stopPropagation();
-              setPopupInfo(incident);
-            }}
-          >
-            <AlertCircle
-              className={`w-6 h-6 ${
-                incident.severity === "high"
-                  ? "text-red-500"
-                  : incident.severity === "medium"
-                  ? "text-yellow-500"
-                  : "text-blue-500"
-              }`}
-            />
-          </Marker>
-        )),
-    [incidents, filter]
-  );
-
-  const customMarkerElements = useMemo(
-    () =>
-      customMarkers.map((marker) => (
-        <Marker
-          key={marker.id}
-          longitude={marker.longitude}
-          latitude={marker.latitude}
-          anchor="bottom"
-        >
-          <div className="relative group">
-            <Flag className="w-6 h-6 text-primary" />
-            <Button
-              variant="destructive"
-              size="icon"
-              className="absolute -top-2 -right-2 h-4 w-4 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRemoveMarker(marker.id);
-              }}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-        </Marker>
-      )),
-    [customMarkers]
-  );
 
   const getSpeedDialActions = () => {
     if (!isLoggedIn) {
@@ -428,6 +434,63 @@ export default function Platform() {
     ];
   };
 
+  const pins = useMemo(
+    () =>
+      incidents
+        ?.filter((incident) => filter === "all" || incident.type === filter)
+        .map((incident) => (
+          <Marker
+            key={`marker-${incident._id}`}
+            longitude={incident.longitude}
+            latitude={incident.latitude}
+            anchor="bottom"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              setPopupInfo(incident);
+            }}
+          >
+            <AlertCircle
+              className={`w-6 h-6 ${
+                incident.severity === "high"
+                  ? "text-red-500"
+                  : incident.severity === "medium"
+                  ? "text-yellow-500"
+                  : "text-blue-500"
+              }`}
+            />
+          </Marker>
+        )),
+    [incidents, filter]
+  );
+
+  const customMarkerElements = useMemo(
+    () =>
+      customMarkers.map((marker) => (
+        <Marker
+          key={marker.id}
+          longitude={marker.longitude}
+          latitude={marker.latitude}
+          anchor="bottom"
+        >
+          <div className="relative group">
+            <Flag className="w-6 h-6 text-primary" />
+            <Button
+              variant="destructive"
+              size="icon"
+              className="absolute -top-2 -right-2 h-4 w-4 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveMarker(marker.id);
+              }}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        </Marker>
+      )),
+    [customMarkers]
+  );
+
   return (
     <>
       <Map
@@ -450,13 +513,11 @@ export default function Platform() {
         <FullscreenControl position="top-left" />
         <NavigationControl position="top-left" />
         <ScaleControl />
-
         {isSelectingLocation && (
           <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-background/90 text-foreground px-4 py-2 rounded-full shadow-lg">
             Click on the map to select incident location
           </div>
         )}
-
         {contextMenu && (
           <MapContextMenu
             longitude={contextMenu.x}
@@ -471,7 +532,6 @@ export default function Platform() {
             }
           />
         )}
-
         {contextMenu && (
           <Marker
             longitude={contextMenu.longitude}
@@ -481,18 +541,24 @@ export default function Platform() {
             <div className="w-4 h-4 bg-primary/50 rounded-full animate-pulse" />
           </Marker>
         )}
-
-        {pins}
-        {customMarkerElements}
-
         {popupInfo && (
           <IncidentPopup
             incident={popupInfo}
             onClose={() => setPopupInfo(null)}
           />
         )}
+        {pins}
+        {customMarkerElements}
       </Map>
-
+      <div className="absolute left-0 bottom-0 right-0 p-4 flex justify-center">
+        {isLoading && (
+          <Spinner
+            childSize="h-6 w-6"
+            className="bg-gradient-to-bl from-black to-blue-400"
+            outerSize="h-8 w-8"
+          />
+        )}
+      </div>
       <div className="absolute top-4 right-4 flex gap-2">
         {!isLoggedIn && (
           <>
@@ -518,16 +584,16 @@ export default function Platform() {
           </div>
         )}
       </div>
-      <FilterControls filter={filter} onFilterChange={setFilter} />
 
-      <CommunityFeed />
-      {isLoading && <div>Loading...</div>}
-      {!isLoading && incidents && incidents.length === 0 && (
-        <div>No incidents found</div>
-      )}
-      <RecentIncidentsCard
+      <FilterControls filter={filter} onFilterChange={setFilter} />
+      <PlatformDock
         incidents={incidents ?? []}
+        messages={messages}
+        newMessage={newMessage}
+        setNewMessage={setNewMessage}
+        handleSendMessage={handleSendMessage}
         onSelectIncident={handleSelectIncident}
+        user={user}
       />
     </>
   );

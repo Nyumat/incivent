@@ -80,28 +80,31 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                   detail: data.message,
                 })
               );
-              toast.info(
-                <div className="flex flex-col gap-1">
-                  <div className="font-semibold">New Message in Chat</div>
-                  <div className="text-sm opacity-90 line-clamp-2 truncate">
-                    From {data.message.username}: {data.message.content}
-                  </div>
-                </div>,
-                {
-                  duration: 3000,
-                  position: "top-center",
-                  action: {
-                    label: "View",
-                    onClick: () => {
-                      window.dispatchEvent(
-                        new CustomEvent("open-chat", {
-                          detail: { messageId: data.message._id },
-                        })
-                      );
+              // Only show toast if they're not already in the chat
+              if (!document.getElementById("chat")) {
+                toast.message(
+                  `New message from ${data.message.username}: ${data.message.content}`,
+                  {
+                    classNames: {
+                      toast:
+                        "bg-background border border-primary text-primary text-md font-medium max-w-sm",
+                      title:
+                        "text-sm leading-relaxed text-foreground",
                     },
-                  },
-                }
-              );
+                    duration: 3000,
+                    action: {
+                      label: "View",
+                      onClick: () => {
+                        window.dispatchEvent(
+                          new CustomEvent("open-chat", {
+                            detail: { messageId: data.message._id },
+                          })
+                        );
+                      },
+                    },
+                  }
+                );
+              }
               break;
           }
         } catch (error) {
