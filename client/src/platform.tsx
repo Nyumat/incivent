@@ -9,13 +9,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   AlertCircle,
-  Copy,
   Flag,
+  LogIn,
+  LogOut,
   Navigation,
   Plus,
-  Share2,
-  SquarePen,
-  Trash,
+  UserPlus,
   X,
 } from "lucide-react";
 import mapboxgl from "mapbox-gl";
@@ -145,6 +144,7 @@ export default function Platform() {
   const queryClient = useQueryClient();
   const mapRef = useRef<MapRef>(null);
   const [reportDialogKey, setReportDialogKey] = useState(0);
+  const [signUpOpen, setSignUpOpen] = useState(false);
   const [popupInfo, setPopupInfo] = useState<PopupInfo>(null);
   const [filter, setFilter] = useState<IncidentFilter>("all");
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
@@ -285,6 +285,30 @@ export default function Platform() {
     navigate("/");
   };
 
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search);
+    if (search.get("signup") === "true") {
+      const button = document.getElementById("speed-dial-trigger");
+      if (button) {
+        button.click();
+      }
+      toast.message(
+        "Welcome to Incivent! Sign up to continue. Or just look around, that's cool too.",
+        {
+          classNames: {
+            toast:
+              "bg-background border border-primary text-primary text-lg font-medium",
+            title: "text-lg font-medium leading-relaxed text-foreground",
+          },
+          duration: 5000,
+          icon: "🎉",
+        }
+      );
+      setSignUpOpen(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   const pins = useMemo(
     () =>
       incidents
@@ -342,6 +366,68 @@ export default function Platform() {
     [customMarkers]
   );
 
+  const getSpeedDialActions = () => {
+    if (!isLoggedIn) {
+      return [
+        {
+          icon: <LogIn className="h-4 w-4" />,
+          label: "Login",
+          trigger: <LoginDialog />,
+        },
+        {
+          icon: <UserPlus className="h-4 w-4" />,
+          label: "Sign Up",
+          trigger: <SignupDialog setOpen={setSignUpOpen} open={signUpOpen} />,
+        },
+      ];
+    }
+
+    return [
+      {
+        icon: <Plus className="h-4 w-4" />,
+        label: "Report Incident",
+        trigger: (
+          <EnhancedReportIncidentDialog
+            key={reportDialogKey}
+            trigger={
+              <Button
+                variant="destructive"
+                className="gap-2"
+                onClick={() => {
+                  setShowReportDialog(true);
+                  setSelectedLocation(null);
+                  setReportDialogKey((prev) => prev + 1);
+                }}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            }
+            onSubmitSuccess={handleReportSuccess}
+            initialLocation={selectedLocation}
+            open={showReportDialog}
+            onOpenChange={(open) => {
+              setShowReportDialog(open);
+              if (!open) {
+                setSelectedLocation(null);
+              }
+            }}
+            onRequestLocationSelect={() => {
+              setIsSelectingLocation(true);
+              setShowReportDialog(false);
+              setSelectedLocation(null);
+            }}
+          />
+        ),
+      },
+      {
+        icon: <LogOut className="h-4 w-4" />,
+        label: "Logout",
+        action: handleLogout,
+        variant: "outline",
+      },
+    ];
+  };
+
   return (
     <>
       <Map
@@ -364,37 +450,6 @@ export default function Platform() {
         <FullscreenControl position="top-left" />
         <NavigationControl position="top-left" />
         <ScaleControl />
-
-        <div className="hidden md:block absolute top-20 right-4">
-          <SpeedDial
-            actionButtons={[
-              {
-                action: () => {},
-                icon: <Copy />,
-
-                label: "Copy",
-              },
-              {
-                action: () => {},
-                icon: <SquarePen />,
-
-                label: "Edit",
-              },
-              {
-                action: () => {},
-                icon: <Share2 />,
-
-                label: "Share",
-              },
-              {
-                action: () => {},
-                icon: <Trash />,
-                label: "Delete",
-              },
-            ]}
-            direction="down"
-          />
-        </div>
 
         {isSelectingLocation && (
           <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-background/90 text-foreground px-4 py-2 rounded-full shadow-lg">
@@ -441,49 +496,24 @@ export default function Platform() {
       <div className="absolute top-4 right-4 flex gap-2">
         {!isLoggedIn && (
           <>
-            <LoginDialog />
-            <SignupDialog />
+            <div className="">
+              <SpeedDial
+                direction="down"
+                actionButtons={getSpeedDialActions()}
+                loggedIn={isLoggedIn}
+              />
+            </div>
           </>
         )}
 
         {isLoggedIn && (
           <div className="absolute top-4 right-4">
             <div className="flex gap-2">
-              <EnhancedReportIncidentDialog
-                key={reportDialogKey}
-                trigger={
-                  <Button
-                    variant="destructive"
-                    className="gap-2"
-                    onClick={() => {
-                      setShowReportDialog(true);
-                      setSelectedLocation(null);
-                      setReportDialogKey((prev) => prev + 1);
-                    }}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Report Incident
-                  </Button>
-                }
-                onSubmitSuccess={handleReportSuccess}
-                initialLocation={selectedLocation}
-                open={showReportDialog}
-                onOpenChange={(open) => {
-                  setShowReportDialog(open);
-                  if (!open) {
-                    setSelectedLocation(null);
-                  }
-                }}
-                onRequestLocationSelect={() => {
-                  setIsSelectingLocation(true);
-                  setShowReportDialog(false);
-                  setSelectedLocation(null);
-                }}
+              <SpeedDial
+                direction="down"
+                actionButtons={getSpeedDialActions()}
+                loggedIn={isLoggedIn}
               />
-
-              <Button variant="outline" onClick={handleLogout}>
-                Logout
-              </Button>
             </div>
           </div>
         )}

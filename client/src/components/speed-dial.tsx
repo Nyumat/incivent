@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -12,16 +13,18 @@ import React from "react";
 
 interface SpeedDialProps {
   direction?: "up" | "down" | "left" | "right";
-  variant?: "default" | "ghost" | "outline";
+  variant?: any;
   size?: "default" | "sm" | "lg";
   actionButtons: Array<{
     icon: React.ReactNode;
     label: string;
-    action: () => void;
-    variant?: "default" | "ghost" | "outline";
+    trigger?: React.ReactNode;
+    action?: () => void;
+    variant?: any;
     size?: "default" | "sm" | "lg";
   }>;
   className?: string;
+  loggedIn?: boolean;
 }
 
 const directionVariants = {
@@ -117,35 +120,48 @@ export const SpeedDial = ({
   size = "default",
   actionButtons,
   className,
+  loggedIn,
 }: SpeedDialProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   const variants = directionVariants[direction];
 
+  const toggleOpen = () => {
+    setIsOpen((prev) => !prev);
+  };
+
   return (
     <TooltipProvider>
       <motion.div
         className={cn("relative flex gap-4", variants.container, className)}
-        onHoverEnd={() => setIsOpen(false)}
+        id="speed-dial"
       >
-        <Button
-          variant={variant}
-          size={size}
-          className={cn("relative z-20")}
-          onMouseEnter={() => setIsOpen(true)}
-        >
-          <motion.div
-            animate={{ rotate: isOpen ? 45 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Plus />
-          </motion.div>
-        </Button>
+        <Tooltip delayDuration={0}>
+          <TooltipContent side="left">
+            <p>{loggedIn ? "Report Incident / Logout" : "Login / Signup"}</p>
+          </TooltipContent>
+          <TooltipTrigger asChild>
+            <Button
+              variant={variant}
+              size={size}
+              className="relative z-20"
+                          onClick={toggleOpen}
+                          id="speed-dial-trigger"
+            >
+              <motion.div
+                animate={{ rotate: isOpen ? 45 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Plus className="w-4 h-4" />
+              </motion.div>
+            </Button>
+          </TooltipTrigger>
+        </Tooltip>
 
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              className={cn("absolute z-10 flex gap-4", variants.list)}
+              className={cn("absolute z-10 mt-12 flex gap-4", variants.list)}
               initial={variants.initial}
               animate={variants.animate}
               exit={variants.exit}
@@ -156,16 +172,19 @@ export const SpeedDial = ({
                   initial={variants.item(index)}
                   animate={variants.itemAnimate}
                 >
-                  <Tooltip>
+                  <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant={action.variant || variant}
-                        size={action.size || size}
-                        onClick={action.action}
-                        className="relative z-10"
-                      >
-                        {action.icon}
-                      </Button>
+                      <div>
+                        {action.trigger || (
+                          <Button
+                            variant={action.variant || variant}
+                            size={action.size || size}
+                            onClick={action.action}
+                          >
+                            {action.icon}
+                          </Button>
+                        )}
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent side="left">
                       <p>{action.label}</p>

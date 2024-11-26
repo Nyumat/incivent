@@ -15,13 +15,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { motion } from "framer-motion";
-import { ArrowRight, Bell, List, Map, Menu, Users } from "lucide-react";
+import { ArrowRight, Bell, Map, Menu, Pin, Users } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { LiveAlertsLanding } from "./components/live-alerts-list";
 import BlurFade from "./components/ui/blur-fade";
 import HeroVideoDialog from "./components/ui/hero-video-dialog";
 import Ripple from "./components/ui/ripple";
+import { useUser } from "./hooks/use-user";
 
 const container = {
   hidden: { opacity: 0 },
@@ -40,6 +41,7 @@ const item = {
 
 export function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
+  const { isLoggedIn } = useUser();
 
   const navItems = [
     { href: "#features", label: "Capabilities" },
@@ -59,8 +61,6 @@ export function LandingPage() {
           >
             Incivent
           </motion.div>
-
-          {/* Desktop Navigation */}
           <div className="hidden md:block">
             <NavigationMenu>
               <NavigationMenuList>
@@ -74,8 +74,6 @@ export function LandingPage() {
               </NavigationMenuList>
             </NavigationMenu>
           </div>
-
-          {/* Mobile Navigation */}
           <div className="md:hidden">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
@@ -104,7 +102,6 @@ export function LandingPage() {
           </div>
         </div>
       </nav>
-
       <motion.section
         initial="hidden"
         animate="show"
@@ -124,17 +121,18 @@ export function LandingPage() {
                 Make a Difference.
               </BlurFade>
             </h1>
-
             <BlurFade delay={3} inView duration={0.5}>
               <p className="text-lg sm:text-xl text-muted-foreground">
-                Welcome to the real-time incident tracking application to keep
-                your neighborhood informed and safe, at any time and from
-                anywhere.
+                {isLoggedIn
+                  ? "Welcome back to Incivent. Start exploring incidents in your area or report new ones to keep your community informed."
+                  : "Welcome to the real-time incident tracking application to keep your neighborhood informed and safe; at any time and from anywhere."}
               </p>
             </BlurFade>
             <div className="flex gap-4 flex-wrap">
               <Button size="lg" asChild className="w-full sm:w-auto">
-                <Link to="/platform?signup=true">Get Started</Link>
+                <Link to={isLoggedIn ? "/platform" : "/platform?signup=true"}>
+                  {isLoggedIn ? "Start Exploring" : "Get Started"}
+                </Link>
               </Button>
               <Button
                 size="lg"
@@ -142,7 +140,7 @@ export function LandingPage() {
                 asChild
                 className="w-full sm:w-auto"
               >
-                <Link target="_blank" to="https://github.com/nyumat">
+                <Link target="_blank" to="https://devpost.com/software/dwitch">
                   Learn More
                 </Link>
               </Button>
@@ -191,8 +189,8 @@ export function LandingPage() {
                     <Bell className="h-12 w-12 text-primary mb-4" />
                     <h3 className="text-xl font-semibold">Live Alerts</h3>
                     <p className="text-muted-foreground">
-                      Stay updated on emergencies, crimes, and events as they
-                      happen.
+                      Stay updated on emergencies, crimes, and incidents in your
+                      area with real-time alerts.
                     </p>
                   </div>
                   <LiveAlertsLanding />
@@ -209,8 +207,8 @@ export function LandingPage() {
                     <Map className="h-12 w-12 text-primary mb-4" />
                     <h3 className="text-xl font-semibold">Interactive Map</h3>
                     <p className="text-muted-foreground">
-                      Easily visualize incidents around your area with a dynamic
-                      interface.
+                      Easily visualize incidents around the world with our
+                      interactive map.
                     </p>
                   </div>
                   <AspectRatio
@@ -230,10 +228,10 @@ export function LandingPage() {
               <Card className="h-full">
                 <CardContent className="pt-6">
                   <Users className="h-12 w-12 text-primary mb-4" />
-                  <h3 className="text-xl font-semibold">Community Reporting</h3>
+                  <h3 className="text-xl font-semibold">Community Chat</h3>
                   <p className="text-muted-foreground">
-                    Report incidents and share information with your neighbors
-                    to improve safety together.
+                    Talk to others on the platform and share information about
+                    incidents and emergencies.
                   </p>
                 </CardContent>
               </Card>
@@ -241,11 +239,13 @@ export function LandingPage() {
             <motion.div variants={item} className="col-span-1">
               <Card className="h-full">
                 <CardContent className="pt-6">
-                  <List className="h-12 w-12 text-primary mb-4" />
-                  <h3 className="text-xl font-semibold">Neighborhood Forums</h3>
+                  <Pin className="h-12 w-12 text-primary mb-4" />
+                  <h3 className="text-xl font-semibold">
+                    Mark Points of Interest
+                  </h3>
                   <p className="text-muted-foreground">
-                    Engage in discussions and share resources with your
-                    geographical community.
+                    Mark points of interest on the map to stay informed and make
+                    a difference in your community.
                   </p>
                 </CardContent>
               </Card>
@@ -273,9 +273,13 @@ export function LandingPage() {
               and make a difference in their communities.
             </p>
             <Button size="lg" asChild className="z-10">
-              <a href="/platform?signup=true" className="gap-2">
-                Sign Up Now <ArrowRight className="h-4 w-4" />
-              </a>
+              <Link
+                to={isLoggedIn ? "/platform" : "/platform?signup=true"}
+                className="gap-2"
+              >
+                {isLoggedIn ? "Start Exploring" : "Get Started"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </motion.div>

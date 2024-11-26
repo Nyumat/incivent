@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { BASE_URL } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LogIn, UserPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -59,20 +59,6 @@ export function LoginDialog() {
     },
   });
 
-  useEffect(() => {
-    const search = new URLSearchParams(window.location.search);
-    if (search.get("login") === "true") {
-      setTimeout(() => {
-        setOpen(true);
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname
-        );
-      }, 500);
-    }
-  }, []);
-
   async function onSubmit(data: LoginFormValues) {
     const { email, password } = data;
     try {
@@ -109,8 +95,8 @@ export function LoginDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" className="gap-2">
-          <LogIn className="w-4 h-4" /> Login
+        <Button variant="default">
+          <LogIn className="w-4 h-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -166,8 +152,12 @@ export function LoginDialog() {
   );
 }
 
-export function SignupDialog() {
-  const [open, setOpen] = useState(false);
+interface SignupDialogProps {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export function SignupDialog({ open, setOpen }: SignupDialogProps) {
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -177,20 +167,6 @@ export function SignupDialog() {
       password: "",
     },
   });
-
-  useEffect(() => {
-    const search = new URLSearchParams(window.location.search);
-    if (search.get("signup") === "true") {
-      setTimeout(() => {
-        setOpen(true);
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname
-        );
-      }, 500);
-    }
-  }, []);
 
   async function onSubmit(data: SignupFormValues) {
     try {
@@ -223,8 +199,8 @@ export function SignupDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary" className="gap-2">
-          <UserPlus className="w-4 h-4" /> Sign Up
+        <Button variant="secondary">
+          <UserPlus className="w-4 h-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
